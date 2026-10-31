@@ -58,7 +58,7 @@ private const val STEP_FORWARD_MS = 30_000L
 private fun Player.durationSeconds(): Double? = duration.takeIf { it != C.TIME_UNSET && it > 0 }?.let { it / 1000.0 }
 
 @Composable
-fun PlayerScreen(video: VideoApi, id: String, onExit: () -> Unit) {
+fun PlayerScreen(video: VideoApi, id: String, fromStart: Boolean, onExit: () -> Unit) {
     var info by remember { mutableStateOf<PlayInfo?>(null) }
     var loadFailed by remember { mutableStateOf(false) }
     LaunchedEffect(id) {
@@ -74,7 +74,7 @@ fun PlayerScreen(video: VideoApi, id: String, onExit: () -> Unit) {
             loadFailed -> Failed(stringResource(R.string.player_failed_network), onExit)
             loaded == null -> Text(stringResource(R.string.video_loading), color = TvColors.Text, modifier = Modifier.align(Alignment.Center))
             !loaded.available -> Failed(stringResource(R.string.player_failed_gone), onExit)
-            else -> Playing(video, loaded, onExit)
+            else -> Playing(video, loaded, fromStart, onExit)
         }
     }
 }
@@ -87,13 +87,13 @@ private fun Failed(message: String, onExit: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(R.string.player_failed_title), color = TvColors.Text, fontSize = 26.sp)
             Text(message, color = TvColors.Muted, fontSize = 18.sp, modifier = Modifier.padding(top = 12.dp, bottom = 24.dp))
-            TvButton(stringResource(R.string.player_back), Modifier.focusRequester(focus), onExit)
+            TvButton(stringResource(R.string.player_back), Modifier.focusRequester(focus), onClick = onExit)
         }
     }
 }
 
 @Composable
-private fun Playing(video: VideoApi, info: PlayInfo, onExit: () -> Unit) {
+private fun Playing(video: VideoApi, info: PlayInfo, fromStart: Boolean, onExit: () -> Unit) {
     val context = LocalContext.current
     var failure by remember { mutableStateOf<PlayFailure?>(null) }
     var converted by remember { mutableStateOf(false) }
@@ -117,7 +117,8 @@ private fun Playing(video: VideoApi, info: PlayInfo, onExit: () -> Unit) {
     // Made during composition, not in the effect below: the surface takes the player when
     // it's created, which is before effects run. Without one it plays sound and no picture.
     val tv = remember(info.id) {
-        TvPlayer(context, video.api.http, info.source(video::absolute), object : TvPlayerEvents {
+        val source = info.source(video::absolute).let { if (fromStart) it.copy(startMs = 0) else it }
+        TvPlayer(context, video.api.http, source, object : TvPlayerEvents {
             override fun onSwitchedToConverted() { converted = true; wake++ }
             override fun onFailed(failure_: PlayFailure) { failure = failure_ }
             override fun onEnded() { save(watched = true); exit() }

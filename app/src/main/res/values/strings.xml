@@ -17,6 +17,9 @@
     <string name="link_refused_proxy">This server can\'t tell which network devices are on. An administrator needs to set up proxy trust.</string>
     <string name="link_denied">The request was refused on the phone. A new code is shown.</string>
     <string name="link_failed">Unable to start linking. Trying again…</string>
+    <string name="account_signed_in">This TV is signed in as this person.</string>
+    <string name="account_unlink">Unlink this TV</string>
+    <string name="account_unlink_confirm">Press again to unlink. You\'ll need your phone to link it again.</string>
     <string name="loading">Loading…</string>
     <string name="retry">Try again</string>
     <string name="startup_failed">Unable to reach your iSputnik.</string>

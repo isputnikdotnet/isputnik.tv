@@ -42,8 +42,9 @@ import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.TvTheme
 import net.isputnik.tv.core.User
 import net.isputnik.tv.core.currentUser
+import net.isputnik.tv.core.Feature
 import net.isputnik.tv.video.VideoApi
-import net.isputnik.tv.video.VideoSection
+import net.isputnik.tv.video.VideoFeature
 
 private sealed interface Stage {
     data object Checking : Stage
@@ -74,7 +75,7 @@ class MainActivity : ComponentActivity() {
 private fun Root(api: ApiClient) {
     var stage by remember { mutableStateOf<Stage>(Stage.Checking) }
     var attempt by remember { mutableIntStateOf(0) }
-    val video = remember { VideoApi(api) }
+    val features = remember { listOf<Feature>(VideoFeature(VideoApi(api))) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(attempt) {
@@ -114,14 +115,16 @@ private fun Root(api: ApiClient) {
         }
         Stage.Connect -> ConnectScreen(api) { attempt++ }
         Stage.Link -> LinkScreen(api, onChangeServer = { stage = Stage.Connect }, onLinked = { attempt++ })
-        is Stage.Signed -> VideoSection(video, current.user, onUnlink = {
-            scope.launch {
-                // Off the server first, so it's gone from Profile too; signed out here either way.
-                runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
-                api.clearSession()
-                stage = Stage.Link
-            }
-        })
+        is Stage.Signed -> InLanguage(current.user.language) {
+            Shell(features, current.user, onUnlink = {
+                scope.launch {
+                    // Off the server first, so it's gone from Profile too; signed out here either way.
+                    runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
+                    api.clearSession()
+                    stage = Stage.Link
+                }
+            })
+        }
     }
 }
 

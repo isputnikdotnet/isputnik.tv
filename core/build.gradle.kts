@@ -16,6 +16,7 @@ dependencies {
     api(libs.compose.foundation)
     api(libs.compose.ui)
     api(libs.tv.material)
+    api(libs.coil.compose)
     api(libs.okhttp)
     api(libs.serialization.json)
     testImplementation(libs.junit)

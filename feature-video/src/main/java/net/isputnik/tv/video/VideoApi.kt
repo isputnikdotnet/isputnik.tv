@@ -3,6 +3,7 @@ package net.isputnik.tv.video
 import kotlinx.serialization.Serializable
 import net.isputnik.tv.core.ApiClient
 import net.isputnik.tv.player.PlaySource
+import java.net.URLEncoder
 
 // What the engine answers (isputnik.video, through home's gateway). Only what the app
 // uses: anything else in an answer is ignored, so a newer engine can't break an older TV.
@@ -21,10 +22,39 @@ data class ContinueItem(
 )
 @Serializable data class ContinueList(val items: List<ContinueItem> = emptyList())
 
-@Serializable data class Episode(val id: String, val episode: Int, val title: String? = null, val progress: Progress? = null)
+@Serializable
+data class Episode(
+    val id: String, val episode: Int, val title: String? = null, val plot: String? = null,
+    val runtimeMinutes: Int? = null, val progress: Progress? = null, val still: String? = null
+)
 @Serializable data class Season(val number: Int, val episodes: List<Episode> = emptyList())
-@Serializable data class NextUp(val id: String, val season: Int, val episode: Int, val position: Double = 0.0)
-@Serializable data class Show(val id: String, val title: String, val plot: String? = null, val seasons: List<Season> = emptyList(), val nextUp: NextUp? = null)
+@Serializable data class NextUp(val id: String, val season: Int, val episode: Int, val title: String? = null, val position: Double = 0.0)
+
+@Serializable
+data class Show(
+    val id: String, val title: String, val year: Int? = null, val plot: String? = null,
+    val genres: List<String> = emptyList(), val rating: Double? = null,
+    val poster: String? = null, val backdrop: String? = null,
+    val seasons: List<Season> = emptyList(), val nextUp: NextUp? = null
+)
+
+@Serializable data class SetFilm(val id: String, val title: String, val year: Int? = null, val poster: String? = null, val progress: Progress? = null)
+@Serializable data class MovieSet(val id: String, val name: String, val films: List<SetFilm> = emptyList())
+
+@Serializable
+data class Movie(
+    val id: String, val title: String, val year: Int? = null, val plot: String? = null,
+    val genres: List<String> = emptyList(), val runtimeMinutes: Int? = null, val rating: Double? = null,
+    val poster: String? = null, val backdrop: String? = null,
+    val progress: Progress? = null, val set: MovieSet? = null
+)
+
+@Serializable data class SetSummary(val id: String, val name: String, val films: Int = 0, val poster: String? = null)
+@Serializable
+data class SetDetail(
+    val id: String, val name: String, val overview: String? = null, val backdrop: String? = null,
+    val films: List<SetFilm> = emptyList()
+)
 
 @Serializable data class Busy(val limit: Int = 0, val reason: String? = null, val title: String? = null)
 @Serializable data class Playback(val mode: String = "none", val url: String? = null, val original: String? = null, val busy: Busy? = null)
@@ -48,24 +78,37 @@ data class PlayInfo(
 
 @Serializable private data class ProgressBody(val position: Double, val duration: Double?, val watched: Boolean? = null)
 
+/** The engine's own sort names. */
+enum class Sort(val query: String, val label: Int) {
+    ADDED("added", R.string.video_sort_added),
+    TITLE("title", R.string.video_sort_title),
+    YEAR("year", R.string.video_sort_year)
+}
+
+enum class Kind(val path: String) { MOVIES("movies"), SHOWS("shows") }
+
 class VideoApi(val api: ApiClient) {
     suspend fun status(): Status = api.get("/api/video/status")
     suspend fun continueWatching(): List<ContinueItem> = api.get<ContinueList>("$BASE/continue").items
-    suspend fun movies(): List<Summary> = all("movies")
-    suspend fun shows(): List<Summary> = all("shows")
     suspend fun show(id: String): Show = api.get("$BASE/shows/$id")
+    suspend fun movie(id: String): Movie = api.get("$BASE/movies/$id")
     suspend fun play(id: String): PlayInfo = api.get("$BASE/play/$id")
+    suspend fun sets(): List<SetSummary> = api.get<Page<SetSummary>>("$BASE/sets").items
+    suspend fun set(id: String): SetDetail = api.get("$BASE/sets/$id")
 
-    private suspend fun all(kind: String): List<Summary> {
+    suspend fun list(kind: Kind, sort: Sort): List<Summary> {
         val out = mutableListOf<Summary>()
         var page = 1
         while (true) {
-            val answer = api.get<Page<Summary>>("$BASE/$kind?pageSize=200&page=$page")
+            val answer = api.get<Page<Summary>>("$BASE/${kind.path}?sort=${sort.query}&pageSize=200&page=$page")
             out += answer.items
             if (answer.items.isEmpty() || out.size >= answer.total) return out
             page++
         }
     }
+
+    suspend fun search(kind: Kind, text: String): List<Summary> =
+        api.get<Page<Summary>>("$BASE/${kind.path}?q=${URLEncoder.encode(text, "UTF-8")}&pageSize=60").items
 
     suspend fun saveProgress(id: String, position: Double, duration: Double?, watched: Boolean? = null) {
         val body = api.json.encodeToString(ProgressBody.serializer(), ProgressBody(position, duration, watched))
@@ -93,4 +136,20 @@ fun formatPlayTime(ms: Long): String {
     val minutes = (total % 3600) / 60
     val seconds = (total % 60).toString().padStart(2, '0')
     return if (hours > 0) "$hours:${minutes.toString().padStart(2, '0')}:$seconds" else "$minutes:$seconds"
+}
+
+/** Whole minutes still to watch; at least 1 while anything is left, null when it can't be said. */
+fun minutesLeft(position: Double, duration: Double?): Int? {
+    if (duration == null || duration <= 0 || position >= duration) return null
+    return kotlin.math.ceil((duration - position) / 60).toInt().coerceAtLeast(1)
+}
+
+/** How far through, 0–1; null when there's nothing to draw. */
+fun fractionOf(position: Double, duration: Double?): Float? =
+    if (duration != null && duration > 0 && position > 0) (position / duration).toFloat().coerceIn(0f, 1f) else null
+
+fun Progress?.fraction(): Float? = when {
+    this == null -> null
+    watched -> 1f
+    else -> fractionOf(position, duration)
 }

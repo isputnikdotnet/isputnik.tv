@@ -139,6 +139,6 @@ internal fun LinkScreen(api: ApiClient, onChangeServer: () -> Unit, onLinked: ()
         if (ServerAddress.isPlainHttp(api.server.orEmpty())) {
             Text(stringResource(R.string.link_plain_http), color = TvColors.Muted, fontSize = 15.sp, modifier = Modifier.padding(bottom = 12.dp))
         }
-        TvButton(stringResource(R.string.link_change_server), Modifier.focusRequester(focus), onChangeServer)
+        TvButton(stringResource(R.string.link_change_server), Modifier.focusRequester(focus), onClick = onChangeServer)
     }
 }

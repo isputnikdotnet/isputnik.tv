@@ -17,6 +17,9 @@
     <string name="link_refused_proxy">Сервер не может определить, в какой сети находятся устройства. Администратору нужно настроить доверие к прокси.</string>
     <string name="link_denied">Запрос отклонён на телефоне. Показан новый код.</string>
     <string name="link_failed">Не удалось начать привязку. Пробуем ещё раз…</string>
+    <string name="account_signed_in">На этом телевизоре выполнен вход от имени этого человека.</string>
+    <string name="account_unlink">Отвязать телевизор</string>
+    <string name="account_unlink_confirm">Нажмите ещё раз, чтобы отвязать. Для новой привязки понадобится телефон.</string>
     <string name="loading">Загрузка…</string>
     <string name="retry">Попробовать ещё раз</string>
     <string name="startup_failed">Не удалось связаться с iSputnik.</string>
