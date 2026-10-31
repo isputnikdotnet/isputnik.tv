@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="video_continue">Continue watching</string>
+    <string name="video_movies">Movies</string>
+    <string name="video_shows">Shows</string>
+    <string name="video_empty">Nothing here yet. Video libraries you can see will appear on this screen.</string>
+    <string name="video_unavailable">Video is not available right now.</string>
+    <string name="video_load_failed">Unable to load your videos.</string>
+    <string name="video_retry">Try again</string>
+    <string name="video_loading">Loading…</string>
+    <string name="video_unlink">Unlink this TV</string>
+    <string name="video_unlink_confirm">Press again to unlink. You\'ll need your phone to link it again.</string>
+    <string name="video_signed_in_as">Signed in as %1$s</string>
+    <string name="video_play">Play</string>
+    <string name="video_resume">Resume</string>
+    <string name="video_episode_code">S%1$02dE%2$02d</string>
+    <string name="video_watched">Watched</string>
+    <string name="video_episode_untitled">Episode %1$d</string>
+    <string name="video_season">Season %1$d</string>
+    <string name="player_converted">This TV can\'t play the file as it is, so a converted copy is playing.</string>
+    <string name="player_failed_title">Unable to play this video</string>
+    <string name="player_failed_decoder">This TV can\'t play the file, and no converted copy is available.</string>
+    <string name="player_failed_network">The connection to your iSputnik was lost.</string>
+    <string name="player_failed_gone">The file is no longer on the server.</string>
+    <string name="player_failed_busy">This TV can\'t play the file, and the server is already converting as many videos as it allows. Try again later.</string>
+    <string name="player_failed_busy_person">This TV can\'t play the file, and you are already converting \"%1$s\" on another screen.</string>
+    <string name="player_failed_other">Something went wrong while playing.</string>
+    <string name="player_back">Back</string>
+</resources>

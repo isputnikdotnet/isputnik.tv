@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">iSputnik TV</string>
+    <string name="connect_title">Подключение к iSputnik</string>
+    <string name="connect_hint">Введите адрес, который вы используете для iSputnik в браузере.</string>
+    <string name="connect_action">Подключить</string>
+    <string name="connect_busy">Подключение…</string>
+    <string name="connect_not_isputnik">По этому адресу сервер iSputnik не отвечает.</string>
+    <string name="connect_unreachable">Не удалось подключиться. Проверьте адрес и попробуйте ещё раз.</string>
+    <string name="connect_invalid">Это не похоже на адрес.</string>
+    <string name="link_title">Привязка телевизора</string>
+    <string name="link_steps">Отсканируйте код телефоном, на котором выполнен вход в iSputnik, или откройте на нём этот адрес:</string>
+    <string name="link_confirm">Убедитесь, что на телефоне показан этот код, и подтвердите паролем.</string>
+    <string name="link_plain_http">Этот адрес не шифруется. Используйте его только в своей домашней сети.</string>
+    <string name="link_change_server">Изменить адрес</string>
+    <string name="link_refused_network">Устройства можно привязать только из домашней сети. Администратор может открыть для вас окно регистрации.</string>
+    <string name="link_refused_proxy">Сервер не может определить, в какой сети находятся устройства. Администратору нужно настроить доверие к прокси.</string>
+    <string name="link_denied">Запрос отклонён на телефоне. Показан новый код.</string>
+    <string name="link_failed">Не удалось начать привязку. Пробуем ещё раз…</string>
+    <string name="loading">Загрузка…</string>
+    <string name="retry">Попробовать ещё раз</string>
+    <string name="startup_failed">Не удалось связаться с iSputnik.</string>
+</resources>

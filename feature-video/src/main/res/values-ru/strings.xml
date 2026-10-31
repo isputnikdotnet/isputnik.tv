@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="video_continue">Продолжить просмотр</string>
+    <string name="video_movies">Фильмы</string>
+    <string name="video_shows">Сериалы</string>
+    <string name="video_empty">Пока ничего нет. Доступные вам видеотеки появятся на этом экране.</string>
+    <string name="video_unavailable">Видео сейчас недоступно.</string>
+    <string name="video_load_failed">Не удалось загрузить видео.</string>
+    <string name="video_retry">Попробовать ещё раз</string>
+    <string name="video_loading">Загрузка…</string>
+    <string name="video_unlink">Отвязать телевизор</string>
+    <string name="video_unlink_confirm">Нажмите ещё раз, чтобы отвязать. Для новой привязки понадобится телефон.</string>
+    <string name="video_signed_in_as">Вход выполнен: %1$s</string>
+    <string name="video_play">Смотреть</string>
+    <string name="video_resume">Продолжить</string>
+    <string name="video_episode_code">S%1$02dE%2$02d</string>
+    <string name="video_watched">Просмотрено</string>
+    <string name="video_episode_untitled">Серия %1$d</string>
+    <string name="video_season">Сезон %1$d</string>
+    <string name="player_converted">Телевизор не может воспроизвести файл как есть, поэтому идёт преобразованная копия.</string>
+    <string name="player_failed_title">Не удалось воспроизвести видео</string>
+    <string name="player_failed_decoder">Телевизор не может воспроизвести файл, а преобразованной копии нет.</string>
+    <string name="player_failed_network">Соединение с iSputnik потеряно.</string>
+    <string name="player_failed_gone">Файла больше нет на сервере.</string>
+    <string name="player_failed_busy">Телевизор не может воспроизвести файл, а сервер уже преобразует максимум видео. Попробуйте позже.</string>
+    <string name="player_failed_busy_person">Телевизор не может воспроизвести файл, а вы уже преобразуете «%1$s» на другом экране.</string>
+    <string name="player_failed_other">Во время воспроизведения произошла ошибка.</string>
+    <string name="player_back">Назад</string>
+</resources>
