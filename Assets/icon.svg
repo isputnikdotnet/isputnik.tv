@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">iSputnik TV app icon</title>
+  <desc id="desc">A flat rounded square: a cream television with V antennae, a teal orbit passing around it, and an orange satellite on the orbit.</desc>
+
+  <rect width="512" height="512" rx="108" fill="#16213a"/>
+
+  <!-- orbit, whole, behind the television -->
+  <ellipse cx="250" cy="240" rx="222" ry="80" fill="none" stroke="#5fb8b0" stroke-width="22" transform="rotate(-24 250 240)"/>
+
+  <!-- antennae, cabinet, screen -->
+  <path d="M256 214 206 146M256 214l50-68" fill="none" stroke="#f1f3ee" stroke-width="20" stroke-linecap="round"/>
+  <rect x="140" y="206" width="232" height="156" rx="30" fill="#f1f3ee"/>
+  <rect x="168" y="234" width="176" height="100" rx="14" fill="#16213a"/>
+
+  <!-- orbit, lower half again, in front of the television -->
+  <path d="M28 240A222 80 0 0 0 472 240" fill="none" stroke="#5fb8b0" stroke-width="22" transform="rotate(-24 250 240)"/>
+
+  <!-- satellite; the navy stroke breaks the orbit around it -->
+  <circle cx="397.5" cy="124.1" r="32" fill="#e9a95f" stroke="#16213a" stroke-width="16"/>
+</svg>

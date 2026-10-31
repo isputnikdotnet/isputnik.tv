@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Assets/icon.svg without its tile. The 512 artwork sits centred in a 768 viewport, which keeps
+     it inside the adaptive icon's safe zone (a 66dp circle of the 108dp canvas). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="768"
+    android:viewportHeight="768">
+    <group android:translateX="128" android:translateY="128">
+        <group android:rotation="-24" android:pivotX="250" android:pivotY="240">
+            <path
+                android:pathData="M28,240a222,80 0 1,0 444,0a222,80 0 1,0 -444,0z"
+                android:strokeColor="#FF5FB8B0"
+                android:strokeWidth="22" />
+        </group>
+        <path
+            android:pathData="M256,214L206,146M256,214L306,146"
+            android:strokeColor="#FFF1F3EE"
+            android:strokeWidth="20"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M170,206h172a30,30 0 0 1 30,30v96a30,30 0 0 1 -30,30h-172a30,30 0 0 1 -30,-30v-96a30,30 0 0 1 30,-30z"
+            android:fillColor="#FFF1F3EE" />
+        <path
+            android:pathData="M182,234h148a14,14 0 0 1 14,14v72a14,14 0 0 1 -14,14h-148a14,14 0 0 1 -14,-14v-72a14,14 0 0 1 14,-14z"
+            android:fillColor="#FF16213A" />
+        <group android:rotation="-24" android:pivotX="250" android:pivotY="240">
+            <path
+                android:pathData="M28,240A222,80 0 0 0 472,240"
+                android:strokeColor="#FF5FB8B0"
+                android:strokeWidth="22" />
+        </group>
+        <path
+            android:pathData="M365.5,124.1a32,32 0 1,0 64,0a32,32 0 1,0 -64,0z"
+            android:fillColor="#FFE9A95F"
+            android:strokeColor="#FF16213A"
+            android:strokeWidth="16" />
+    </group>
+</vector>
