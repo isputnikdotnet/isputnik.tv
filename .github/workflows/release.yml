@@ -24,6 +24,9 @@ jobs:
           java-version: "21"
           cache: gradle
       - uses: android-actions/setup-android@v3
+        with:
+          # Its default asks for "tools" too, which the SDK no longer has.
+          packages: platform-tools
 
       - name: The tag matches the version
         run: |
