@@ -51,4 +51,15 @@
     <string name="player_failed_busy_person">This TV can\'t play the file, and you are already converting \"%1$s\" on another screen.</string>
     <string name="player_failed_other">Something went wrong while playing.</string>
     <string name="player_back">Back</string>
+    <string name="player_audio">Audio</string>
+    <string name="player_subtitles">Subtitles</string>
+    <string name="player_subtitles_off">Off</string>
+    <string name="player_track">Track %1$d</string>
+    <string name="player_forced">Forced</string>
+    <string name="player_choice_failed">The server can\'t convert another video right now, so nothing has changed.</string>
+    <string name="player_skip_intro">Skip intro</string>
+    <string name="player_next_episode_in">Next episode in %1$d s</string>
+    <string name="player_next_film_in">Next film in %1$d s</string>
+    <string name="player_play_now">Play now</string>
+    <string name="player_cancel">Cancel</string>
 </resources>

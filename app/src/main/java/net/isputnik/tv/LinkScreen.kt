@@ -54,7 +54,7 @@ private fun qrCode(text: String, size: Int = 480): ImageBitmap {
 /** Home's Link a device, seen from the TV: a code and a QR. The phone does the rest, against
  *  home's own /link page, with the person's password. The TV never sees a password. */
 @Composable
-internal fun LinkScreen(api: ApiClient, onChangeServer: () -> Unit, onLinked: () -> Unit) {
+internal fun LinkScreen(api: ApiClient, onChangeServer: (() -> Unit)?, onCancel: (() -> Unit)?, onLinked: () -> Unit) {
     var link by remember { mutableStateOf<LinkStart?>(null) }
     var notice by remember { mutableStateOf<Int?>(null) }
     var refused by remember { mutableStateOf<Int?>(null) }
@@ -139,6 +139,10 @@ internal fun LinkScreen(api: ApiClient, onChangeServer: () -> Unit, onLinked: ()
         if (ServerAddress.isPlainHttp(api.server.orEmpty())) {
             Text(stringResource(R.string.link_plain_http), color = TvColors.Muted, fontSize = 15.sp, modifier = Modifier.padding(bottom = 12.dp))
         }
-        TvButton(stringResource(R.string.link_change_server), Modifier.focusRequester(focus), onClick = onChangeServer)
+        // Someone already linked here has a way back; only a TV with nobody on it can change server.
+        when {
+            onCancel != null -> TvButton(stringResource(R.string.link_cancel), Modifier.focusRequester(focus), onClick = onCancel)
+            onChangeServer != null -> TvButton(stringResource(R.string.link_change_server), Modifier.focusRequester(focus), onClick = onChangeServer)
+        }
     }
 }

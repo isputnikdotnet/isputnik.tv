@@ -53,4 +53,15 @@
     <string name="player_failed_busy_person">Телевизор не может воспроизвести файл, а вы уже преобразуете «%1$s» на другом экране.</string>
     <string name="player_failed_other">Во время воспроизведения произошла ошибка.</string>
     <string name="player_back">Назад</string>
+    <string name="player_audio">Звук</string>
+    <string name="player_subtitles">Субтитры</string>
+    <string name="player_subtitles_off">Выключены</string>
+    <string name="player_track">Дорожка %1$d</string>
+    <string name="player_forced">Форсированные</string>
+    <string name="player_choice_failed">Сервер сейчас не может преобразовать ещё одно видео, поэтому ничего не изменилось.</string>
+    <string name="player_skip_intro">Пропустить заставку</string>
+    <string name="player_next_episode_in">Следующая серия через %1$d с</string>
+    <string name="player_next_film_in">Следующий фильм через %1$d с</string>
+    <string name="player_play_now">Смотреть сейчас</string>
+    <string name="player_cancel">Отмена</string>
 </resources>

@@ -3,6 +3,7 @@ package net.isputnik.tv
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,12 +12,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,13 +37,13 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import kotlinx.coroutines.launch
 import net.isputnik.tv.core.ApiClient
 import net.isputnik.tv.core.Empty
+import net.isputnik.tv.core.Feature
 import net.isputnik.tv.core.KeystoreTextStore
 import net.isputnik.tv.core.TvButton
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.TvTheme
 import net.isputnik.tv.core.User
 import net.isputnik.tv.core.currentUser
-import net.isputnik.tv.core.Feature
 import net.isputnik.tv.video.VideoApi
 import net.isputnik.tv.video.VideoFeature
 
@@ -50,7 +51,8 @@ private sealed interface Stage {
     data object Checking : Stage
     data object Unreachable : Stage
     data object Connect : Stage
-    data object Link : Stage
+    data object Who : Stage
+    data class Link(val backTo: String?) : Stage
     data class Signed(val user: User) : Stage
 }
 
@@ -73,29 +75,47 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun Root(api: ApiClient) {
-    var stage by remember { mutableStateOf<Stage>(Stage.Checking) }
+    // With several people on this TV it asks who's watching when opened; with one it just opens.
+    var stage by remember { mutableStateOf<Stage>(if (api.people.size > 1) Stage.Who else Stage.Checking) }
     var attempt by remember { mutableIntStateOf(0) }
-    val features = remember { listOf<Feature>(VideoFeature(VideoApi(api))) }
     val scope = rememberCoroutineScope()
 
+    /** With this person gone: whoever's left, or a new code. */
+    fun afterLeaving() {
+        stage = if (api.people.isNotEmpty()) Stage.Who else Stage.Link(null)
+    }
+
     LaunchedEffect(attempt) {
+        if (stage == Stage.Who) return@LaunchedEffect
         if (api.server == null) {
             stage = Stage.Connect
             return@LaunchedEffect
         }
         stage = Stage.Checking
-        stage = try {
-            api.currentUser()?.let { Stage.Signed(it) } ?: Stage.Link
+        try {
+            val user = api.currentUser()
+            if (user != null) {
+                api.remember(user)
+                stage = Stage.Signed(user)
+            } else {
+                api.clearSession()
+                afterLeaving()
+            }
         } catch (_: Exception) {
-            Stage.Unreachable
+            stage = Stage.Unreachable
         }
     }
-    // Revoked in Profile, or expired: back to a fresh code, no stale session kept.
+    // Revoked in Profile, or expired: this person's session goes, and nobody else's.
     LaunchedEffect(Unit) {
         api.signedOut.collect {
             api.clearSession()
-            stage = Stage.Link
+            afterLeaving()
         }
+    }
+
+    fun check() {
+        stage = Stage.Checking
+        attempt++
     }
 
     when (val current = stage) {
@@ -113,17 +133,59 @@ private fun Root(api: ApiClient) {
                 }
             }
         }
-        Stage.Connect -> ConnectScreen(api) { attempt++ }
-        Stage.Link -> LinkScreen(api, onChangeServer = { stage = Stage.Connect }, onLinked = { attempt++ })
-        is Stage.Signed -> InLanguage(current.user.language) {
-            Shell(features, current.user, onUnlink = {
-                scope.launch {
-                    // Off the server first, so it's gone from Profile too; signed out here either way.
-                    runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
-                    api.clearSession()
-                    stage = Stage.Link
+        Stage.Connect -> ConnectScreen(api) { check() }
+        Stage.Who -> WhoScreen(
+            people = api.people,
+            onChoose = {
+                api.switchTo(it)
+                check()
+            },
+            onAdd = {
+                val back = api.activePerson
+                api.startLinking()
+                stage = Stage.Link(back)
+            }
+        )
+        is Stage.Link -> {
+            val leave = current.backTo?.let { back ->
+                {
+                    api.switchTo(back)
+                    check()
                 }
-            })
+            } ?: if (api.people.isNotEmpty()) ({ stage = Stage.Who }) else null
+            BackHandler(enabled = leave != null) { leave?.invoke() }
+            LinkScreen(
+                api,
+                onChangeServer = if (api.people.isEmpty()) ({ stage = Stage.Connect }) else null,
+                onCancel = leave,
+                onLinked = { check() }
+            )
+        }
+        is Stage.Signed -> key(current.user.id) {
+            val features = remember { listOf<Feature>(VideoFeature(VideoApi(api), current.user.id)) }
+            InLanguage(current.user.language) {
+                Shell(
+                    features,
+                    current.user,
+                    people = api.people,
+                    onSwitch = {
+                        api.switchTo(it)
+                        check()
+                    },
+                    onAdd = {
+                        api.startLinking()
+                        stage = Stage.Link(current.user.id)
+                    },
+                    onUnlink = {
+                        scope.launch {
+                            // Off the server first, so it's gone from Profile too; forgotten here either way.
+                            runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
+                            api.clearSession()
+                            afterLeaving()
+                        }
+                    }
+                )
+            }
         }
     }
 }

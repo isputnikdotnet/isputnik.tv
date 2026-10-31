@@ -59,6 +59,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import net.isputnik.tv.core.ApiException
+import net.isputnik.tv.core.LocalFocusMemory
 import net.isputnik.tv.core.Navigator
 import net.isputnik.tv.core.PageMessage
 import net.isputnik.tv.core.PosterCard
@@ -365,6 +366,7 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
     var fieldFocused by remember { mutableStateOf(false) }
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
+    val memory = LocalFocusMemory.current
 
     LaunchedEffect(query) {
         val text = query.trim()
@@ -395,10 +397,11 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
                 cursorBrush = SolidColor(TvColors.Accent),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Search),
                 // The Fire keyboard's Next would otherwise go to whatever comes next on the
-                // screen, which is the name in the menu. Finishing typing means the results.
+                // screen, which is the name in the menu. Finishing typing means the first result.
                 keyboardActions = KeyboardActions {
                     keyboard?.hide()
-                    focus.moveFocus(FocusDirection.Down)
+                    val first = movies.firstOrNull()?.let { "found-movies/${it.id}" } ?: shows.firstOrNull()?.let { "found-shows/${it.id}" }
+                    if (first == null || !memory.focus(first)) focus.moveFocus(FocusDirection.Down)
                 },
                 modifier = Modifier
                     .padding(horizontal = PageGutter)

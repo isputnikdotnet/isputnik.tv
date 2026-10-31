@@ -3,6 +3,7 @@ package net.isputnik.tv.video
 import kotlinx.serialization.Serializable
 import net.isputnik.tv.core.ApiClient
 import net.isputnik.tv.player.PlaySource
+import net.isputnik.tv.player.SideSubtitle
 import java.net.URLEncoder
 
 // What the engine answers (isputnik.video, through home's gateway). Only what the app
@@ -62,7 +63,9 @@ data class SetDetail(
 @Serializable
 data class PlayInfo(
     val id: String, val title: String, val show: ShowRef? = null, val season: Int? = null, val episode: Int? = null,
-    val available: Boolean = true, val playback: Playback = Playback(), val resumeAt: Double = 0.0
+    val available: Boolean = true, val playback: Playback = Playback(), val resumeAt: Double = 0.0,
+    val audioTracks: List<AudioTrack> = emptyList(), val subtitleTracks: List<SubtitleTrack> = emptyList(),
+    val markers: Markers? = null, val next: NextTitle? = null
 ) {
     /** The file first, the converted copy as the way out: this app decides per device what it
      *  decodes. An engine older than 0.13 names no original, and its own choice is played.
@@ -70,7 +73,8 @@ data class PlayInfo(
     fun source(absolute: (String) -> String): PlaySource {
         val original = playback.original ?: playback.url.takeIf { playback.mode == "direct" }
         val converted = playback.url.takeIf { it != original && playback.busy == null }
-        return PlaySource(original?.let(absolute), converted?.let(absolute), (resumeAt * 1000).toLong())
+        val subtitles = subtitleTracks.filter { it.kind == "text" && it.url != null }.map { SideSubtitle(it.id, absolute(it.url!!), it.language) }
+        return PlaySource(original?.let(absolute), converted?.let(absolute), (resumeAt * 1000).toLong(), subtitles)
     }
 
     fun heading(): String = show?.title?.let { "$it · $title" } ?: title
@@ -92,7 +96,12 @@ class VideoApi(val api: ApiClient) {
     suspend fun continueWatching(): List<ContinueItem> = api.get<ContinueList>("$BASE/continue").items
     suspend fun show(id: String): Show = api.get("$BASE/shows/$id")
     suspend fun movie(id: String): Movie = api.get("$BASE/movies/$id")
-    suspend fun play(id: String): PlayInfo = api.get("$BASE/play/$id")
+    /** `audio`: the sound track wanted; `subtitle`: an image subtitle to burn in. Both change
+     *  only the converted copy `playback.url` names. */
+    suspend fun play(id: String, audio: Int? = null, subtitle: String? = null): PlayInfo {
+        val query = listOfNotNull(audio?.let { "audio=$it" }, subtitle?.let { "subtitle=$it" }).joinToString("&")
+        return api.get("$BASE/play/$id" + if (query.isEmpty()) "" else "?$query")
+    }
     suspend fun sets(): List<SetSummary> = api.get<Page<SetSummary>>("$BASE/sets").items
     suspend fun set(id: String): SetDetail = api.get("$BASE/sets/$id")
 

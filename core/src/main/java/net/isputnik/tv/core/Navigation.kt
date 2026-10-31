@@ -62,6 +62,13 @@ class Navigator(private val home: Route) {
         if (stack.size > 1) onLeft(stack.removeAt(stack.lastIndex)) else stack[0] = home
     }
 
+    /** The next episode in the player's place: Back still goes to where the player was opened. */
+    fun replace(route: Route) {
+        focusContent = true
+        onLeft(stack.last())
+        stack[stack.lastIndex] = route
+    }
+
     fun select(route: Route) {
         focusContent = false
         stack.clear()
@@ -74,6 +81,10 @@ class FocusMemory(private val last: MutableState<String?>) {
     private val requesters = mutableMapOf<String, FocusRequester>()
     private var fallback: String? = null
 
+    /** Whatever Compose focuses by itself while a screen is still building isn't a choice, and
+     *  mustn't be remembered as the card you left. */
+    private var settled = false
+
     internal fun register(key: String, requester: FocusRequester, isDefault: Boolean) {
         requesters[key] = requester
         if (isDefault) fallback = key
@@ -84,15 +95,25 @@ class FocusMemory(private val last: MutableState<String?>) {
     }
 
     internal fun focused(key: String) {
-        last.value = key
+        if (settled) last.value = key
     }
 
-    /** The key to focus on arriving: the one left, if it's still on screen, else the default. */
-    internal fun target(): String? = FocusMemory.choose(last.value, fallback, requesters.keys)
+    internal fun settle() {
+        settled = true
+    }
 
-    internal fun restore(): Boolean {
-        val requester = requesters[target()] ?: return false
+    /** Sends focus to a particular card, if it's on screen. */
+    fun focus(key: String): Boolean {
+        val requester = requesters[key] ?: return false
         return runCatching { requester.requestFocus() }.isSuccess
+    }
+
+    /** To the card left, else the default; `patient` gives the card left time to appear. */
+    internal fun restore(patient: Boolean): Boolean {
+        val target = if (patient && last.value != null) last.value?.takeIf { it in requesters } else choose(last.value, fallback, requesters.keys)
+        val requester = requesters[target] ?: return false
+        settled = true
+        return runCatching { requester.requestFocus() }.getOrDefault(false)
     }
 
     companion object {
@@ -122,8 +143,24 @@ fun RestoreFocus(ready: Boolean) {
     val nav = LocalNavigator.current
     LaunchedEffect(ready) {
         if (ready && nav.focusContent) {
-            withFrameNanos { }
-            memory.restore()
+            // A row builds its cards during layout, a frame or more after this runs. Left to
+            // itself, focus would fall on whatever is ready first, however unwelcome.
+            repeat(FOCUS_TRIES) { attempt ->
+                withFrameNanos { }
+                if (memory.restore(patient = attempt < PATIENT_TRIES)) return@LaunchedEffect
+            }
         }
+        if (ready) memory.settle()
+    }
+}
+
+private const val FOCUS_TRIES = 30
+private const val PATIENT_TRIES = 10
+
+/** Asks for focus once the target is on screen, for what isn't in a row of remembered cards. */
+suspend fun FocusRequester.requestWhenReady() {
+    repeat(FOCUS_TRIES) {
+        withFrameNanos { }
+        if (runCatching { requestFocus() }.getOrDefault(false)) return
     }
 }

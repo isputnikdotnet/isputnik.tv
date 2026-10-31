@@ -1,6 +1,8 @@
 package net.isputnik.tv.video
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import net.isputnik.tv.core.Destination
 import net.isputnik.tv.core.Feature
 import net.isputnik.tv.core.Navigator
@@ -19,7 +21,7 @@ sealed interface VideoRoute : Route {
 }
 
 /** Shows and movies. Home lives here until a second section has rows to mix in (T5). */
-class VideoFeature(private val video: VideoApi) : Feature {
+class VideoFeature(private val video: VideoApi, private val userId: String) : Feature {
     private val store = VideoStore(video)
 
     override val destinations = listOf(
@@ -41,7 +43,11 @@ class VideoFeature(private val video: VideoApi) : Feature {
             is VideoRoute.MoviePage -> MoviePage(video, nav, page.id)
             is VideoRoute.ShowPage -> ShowPage(video, nav, page.id)
             is VideoRoute.SetPage -> SetPage(video, nav, page.id)
-            is VideoRoute.Play -> PlayerScreen(video, page.id, page.fromStart) { nav.back() }
+            is VideoRoute.Play -> {
+                val context = LocalContext.current
+                val prefs = remember(userId) { PlayerPrefs(context, userId) }
+                PlayerScreen(video, page.id, page.fromStart, prefs, onNext = { nav.replace(VideoRoute.Play(it)) }, onExit = { nav.back() })
+            }
         }
     }
 }
