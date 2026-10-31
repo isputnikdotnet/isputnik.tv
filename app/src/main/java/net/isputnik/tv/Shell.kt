@@ -103,6 +103,8 @@ private class AccountFeature(
                 Spacer(Modifier.height(10.dp))
                 Text(stringResource(R.string.account_unlink_confirm), color = TvColors.Muted, fontSize = 15.sp)
             }
+            Spacer(Modifier.height(18.dp))
+            Text(stringResource(R.string.account_version, BuildConfig.VERSION_NAME), color = TvColors.Muted, fontSize = 13.sp)
         }
         RestoreFocus(true)
     }
@@ -117,10 +119,11 @@ internal fun Shell(
     people: List<Person>,
     onSwitch: (String) -> Unit,
     onAdd: () -> Unit,
-    onUnlink: () -> Unit
+    onUnlink: () -> Unit,
+    updates: Updates
 ) {
     val account = remember(user, people) { AccountFeature(user, people, onSwitch, onAdd, onUnlink) }
-    val all = remember(features, account) { features + account }
+    val all = remember(features, account, updates) { features + account + UpdateFeature(updates) }
     val destinations = remember(all) { all.flatMap { it.destinations } }
     val holder = rememberSaveableStateHolder()
     val nav = remember { Navigator(destinations.first().route).apply { onLeft = { holder.removeState(it.key) } } }
@@ -136,7 +139,9 @@ internal fun Shell(
                 current = route,
                 personName = user.displayName,
                 onSelect = { nav.select(it) },
-                onPerson = { nav.push(AccountRoute) }
+                onPerson = { nav.push(AccountRoute) },
+                notice = updates.available?.let { stringResource(R.string.update_notice) },
+                onNotice = { nav.push(UpdateRoute) }
             )
         }
         Box(Modifier.weight(1f)) {

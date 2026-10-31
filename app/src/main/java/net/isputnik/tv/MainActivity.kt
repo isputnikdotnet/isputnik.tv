@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +47,7 @@ import net.isputnik.tv.core.User
 import net.isputnik.tv.core.currentUser
 import net.isputnik.tv.video.VideoApi
 import net.isputnik.tv.video.VideoFeature
+import okhttp3.CookieJar
 
 private sealed interface Stage {
     data object Checking : Stage
@@ -79,6 +81,10 @@ private fun Root(api: ApiClient) {
     var stage by remember { mutableStateOf<Stage>(if (api.people.size > 1) Stage.Who else Stage.Checking) }
     var attempt by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    // Through the app's client for its user agent, but none of the session goes to GitHub.
+    val updates = remember { Updates(context, api.http.newBuilder().cookieJar(CookieJar.NO_COOKIES).build()) }
+    LaunchedEffect(Unit) { updates.check() }
 
     /** With this person gone: whoever's left, or a new code. */
     fun afterLeaving() {
@@ -183,7 +189,8 @@ private fun Root(api: ApiClient) {
                             api.clearSession()
                             afterLeaving()
                         }
-                    }
+                    },
+                    updates = updates
                 )
             }
         }

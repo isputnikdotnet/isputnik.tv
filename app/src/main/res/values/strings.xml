@@ -25,4 +25,13 @@
     <string name="loading">Loading…</string>
     <string name="retry">Try again</string>
     <string name="startup_failed">Unable to reach your iSputnik.</string>
+    <string name="account_version">iSputnik TV %1$s</string>
+    <string name="update_notice">Update available</string>
+    <string name="update_title">iSputnik TV %1$s is available</string>
+    <string name="update_body">This TV has %1$s. Everyone linked here stays linked, and your place in everything is kept.</string>
+    <string name="update_action">Update now</string>
+    <string name="update_downloading">Downloading… %1$d%%</string>
+    <string name="update_failed">Unable to download the update. Check the connection and try again.</string>
+    <string name="update_open_settings">Continue</string>
+    <string name="update_permission">This TV has to allow iSputnik TV to install its own updates, once. In the TV\'s settings, turn it on for iSputnik TV. On a Fire TV: My Fire TV, Developer options, Install unknown apps. Then come back and press this again.</string>
 </resources>

@@ -78,7 +78,9 @@ fun TopBar(
     current: Route,
     personName: String,
     onSelect: (Route) -> Unit,
-    onPerson: () -> Unit
+    onPerson: () -> Unit,
+    notice: String? = null,
+    onNotice: () -> Unit = {}
 ) {
     Row(
         Modifier.fillMaxWidth().padding(start = 24.dp, end = 28.dp, top = 8.dp, bottom = 2.dp),
@@ -93,6 +95,20 @@ fun TopBar(
                 MenuItem(stringResource(destination.label), destination.icon, destination.route == current) { onSelect(destination.route) }
                 Spacer(Modifier.width(6.dp))
             }
+        }
+        if (notice != null) {
+            var noticeFocused by remember { mutableStateOf(false) }
+            Box(
+                Modifier
+                    .onFocusChanged { noticeFocused = it.hasFocus }
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (noticeFocused) TvColors.Accent else TvColors.SurfaceRaised)
+                    .clickable(onClick = onNotice)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(notice, color = if (noticeFocused) TvColors.OnAccent else TvColors.Accent, fontSize = 13.sp, maxLines = 1)
+            }
+            Spacer(Modifier.width(8.dp))
         }
         var focused by remember { mutableStateOf(false) }
         Row(

@@ -25,4 +25,13 @@
     <string name="loading">Загрузка…</string>
     <string name="retry">Попробовать ещё раз</string>
     <string name="startup_failed">Не удалось связаться с iSputnik.</string>
+    <string name="account_version">iSputnik TV %1$s</string>
+    <string name="update_notice">Есть обновление</string>
+    <string name="update_title">Доступна версия iSputnik TV %1$s</string>
+    <string name="update_body">На этом телевизоре версия %1$s. Все привязанные люди останутся привязанными, места просмотра сохранятся.</string>
+    <string name="update_action">Обновить</string>
+    <string name="update_downloading">Загрузка… %1$d%%</string>
+    <string name="update_failed">Не удалось загрузить обновление. Проверьте подключение и попробуйте ещё раз.</string>
+    <string name="update_open_settings">Продолжить</string>
+    <string name="update_permission">Телевизор должен один раз разрешить iSputnik TV устанавливать обновления. Включите это для iSputnik TV в настройках телевизора. На Fire TV: My Fire TV, Developer options, Install unknown apps. Затем вернитесь и нажмите ещё раз.</string>
 </resources>
