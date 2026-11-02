@@ -71,7 +71,7 @@ import net.isputnik.tv.core.remembersFocus
 import net.isputnik.tv.core.R as CoreR
 
 internal val PosterWidth = 136.dp
-internal val PosterHeight = 190.dp
+internal val PosterHeight = 160.dp
 private const val GridColumns = 6
 internal val PageGutter = 32.dp
 

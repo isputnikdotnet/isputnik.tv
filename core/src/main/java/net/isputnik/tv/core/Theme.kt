@@ -92,6 +92,17 @@ private val PlainDarkPalette = TvPalette(
     muted = Color(0xFF9FA9AD)
 )
 
+/** Home's tokens.css as it stands. */
+private val ThanksgivingPalette = TvPalette(
+    background = Color(0xFF170B06),
+    surface = Color(0xFF27140B),
+    surfaceRaised = Color(0xFF351D10),
+    accent = Color(0xFFF0A23C),
+    onAccent = Color(0xFF170B06),
+    text = Color(0xFFF7EAD9),
+    muted = Color(0xFFC7A98E)
+)
+
 /** Light's sage green, at night. */
 private val LightPalette = TvPalette(
     background = Color(0xFF101C1B),
@@ -134,6 +145,7 @@ fun paletteFor(theme: String?): TvPalette = when (theme) {
     "plain-dark", "system" -> PlainDarkPalette
     "plain-light" -> PlainLightPalette
     "minimalist" -> MinimalistPalette
+    "thanksgiving" -> ThanksgivingPalette
     else -> OrbitPalette
 }
 

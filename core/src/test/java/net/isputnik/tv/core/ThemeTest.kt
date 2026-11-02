@@ -9,7 +9,7 @@ import org.junit.Test
 
 class ThemeTest {
     // Home's THEME_PREFERENCES, in its db.ts.
-    private val themes = listOf("system", "light", "dark", "plain-light", "plain-dark", "minimalist", "orbit")
+    private val themes = listOf("system", "light", "dark", "plain-light", "plain-dark", "minimalist", "orbit", "thanksgiving")
 
     private fun contrast(a: Color, b: Color): Float {
         val (lighter, darker) = listOf(a.luminance(), b.luminance()).sortedDescending()
