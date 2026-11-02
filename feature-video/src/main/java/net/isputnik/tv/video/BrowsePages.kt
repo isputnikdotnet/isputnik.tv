@@ -101,7 +101,7 @@ private fun Banner(video: VideoApi, banner: BannerModel, nav: Navigator) {
         banner.backdrop?.let {
             AsyncImage(model = video.absolute(it), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20A1420), 0.55f to Color(0xA60A1420), 1f to Color(0x000A1420))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to TvColors.Background.copy(alpha = 0.95f), 0.55f to TvColors.Background.copy(alpha = 0.65f), 1f to TvColors.Background.copy(alpha = 0f))))
         Column(Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 16.dp), verticalArrangement = Arrangement.Center) {
             Text(
                 banner.title.uppercase(),

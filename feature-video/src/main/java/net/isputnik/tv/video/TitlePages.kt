@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -54,8 +53,8 @@ private fun Backdrop(video: VideoApi, backdrop: String?, content: @Composable Bo
         backdrop?.let {
             AsyncImage(model = video.absolute(it), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF50A1420), 0.6f to Color(0xB30A1420), 1f to Color(0x660A1420))))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color(0x000A1420), 1f to Color(0xFF0A1420))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to TvColors.Background.copy(alpha = 0.96f), 0.6f to TvColors.Background.copy(alpha = 0.7f), 1f to TvColors.Background.copy(alpha = 0.4f))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to TvColors.Background.copy(alpha = 0f), 1f to TvColors.Background)))
         content()
     }
 }

@@ -18,10 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,31 +47,127 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.darkColorScheme
 import coil3.compose.AsyncImage
 
-/** The look of the owner's picture in docs/tv-app-plan.md: dark navy, one teal accent. */
+/** One theme on a TV. Always dark, whatever the website wears: a white screen is hard on a dark room. */
+data class TvPalette(
+    val background: Color,
+    val surface: Color,
+    val surfaceRaised: Color,
+    val accent: Color,
+    val onAccent: Color,
+    val text: Color,
+    val muted: Color
+)
+
+/** The look of the owner's picture in docs/tv-app-plan.md: dark navy, one teal accent. Also what
+ *  a screen wears when it's nobody's in particular: connecting, linking, who's watching. */
+val OrbitPalette = TvPalette(
+    background = Color(0xFF0A1420),
+    surface = Color(0xFF142334),
+    surfaceRaised = Color(0xFF1E3145),
+    accent = Color(0xFF16C7C7),
+    onAccent = Color(0xFF04171A),
+    text = Color(0xFFF2F6FA),
+    muted = Color(0xFF93A3B5)
+)
+
+/** Home's tokens.css as it stands. */
+private val DarkPalette = TvPalette(
+    background = Color(0xFF020B0E),
+    surface = Color(0xFF07191D),
+    surfaceRaised = Color(0xFF0D2528),
+    accent = Color(0xFFD14B2D),
+    onAccent = Color(0xFF020B0E),
+    text = Color(0xFFF2D9AD),
+    muted = Color(0xFFB78F5D)
+)
+
+/** Home's tokens.css as it stands. */
+private val PlainDarkPalette = TvPalette(
+    background = Color(0xFF04080C),
+    surface = Color(0xFF0C141A),
+    surfaceRaised = Color(0xFF141F27),
+    accent = Color(0xFF45BED2),
+    onAccent = Color(0xFF04080C),
+    text = Color(0xFFEDF2F4),
+    muted = Color(0xFF9FA9AD)
+)
+
+/** Light's sage green, at night. */
+private val LightPalette = TvPalette(
+    background = Color(0xFF101C1B),
+    surface = Color(0xFF192927),
+    surfaceRaised = Color(0xFF233633),
+    accent = Color(0xFF6FB3A8),
+    onAccent = Color(0xFF0B1716),
+    text = Color(0xFFF1EFE3),
+    muted = Color(0xFFA8B0A3)
+)
+
+/** Plain Light's blue, at night. */
+private val PlainLightPalette = TvPalette(
+    background = Color(0xFF0F172A),
+    surface = Color(0xFF1A2438),
+    surfaceRaised = Color(0xFF263349),
+    accent = Color(0xFF60A5FA),
+    onAccent = Color(0xFF0B1A33),
+    text = Color(0xFFF1F5F9),
+    muted = Color(0xFF94A3B8)
+)
+
+/** Minimalist's greys, at night. The accent stays short of white, or the white ring on a focused
+ *  button wouldn't show. */
+private val MinimalistPalette = TvPalette(
+    background = Color(0xFF161617),
+    surface = Color(0xFF222224),
+    surfaceRaised = Color(0xFF2F2F32),
+    accent = Color(0xFFC4C4BF),
+    onAccent = Color(0xFF1D1D1F),
+    text = Color(0xFFF2F2EF),
+    muted = Color(0xFFA5A5A1)
+)
+
+/** A theme name from home's account (THEME_PREFERENCES in its db.ts). "system" follows the device
+ *  on the website, and a TV has no such preference. A name this version doesn't know gets the default. */
+fun paletteFor(theme: String?): TvPalette = when (theme) {
+    "dark" -> DarkPalette
+    "light" -> LightPalette
+    "plain-dark", "system" -> PlainDarkPalette
+    "plain-light" -> PlainLightPalette
+    "minimalist" -> MinimalistPalette
+    else -> OrbitPalette
+}
+
+private val LocalTvPalette = staticCompositionLocalOf { OrbitPalette }
+
+/** The colours of the theme in force, for use inside [TvTheme]. */
 object TvColors {
-    val Background = Color(0xFF0A1420)
-    val Surface = Color(0xFF142334)
-    val SurfaceRaised = Color(0xFF1E3145)
-    val Accent = Color(0xFF16C7C7)
-    val OnAccent = Color(0xFF04171A)
-    val Text = Color(0xFFF2F6FA)
-    val Muted = Color(0xFF93A3B5)
+    val Background: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.background
+    val Surface: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.surface
+    val SurfaceRaised: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.surfaceRaised
+    val Accent: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.accent
+    val OnAccent: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.onAccent
+    val Text: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.text
+    val Muted: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.muted
     val Track = Color(0x55FFFFFF)
 }
 
+/** `theme` is the name on the account in use; null is the default. */
 @Composable
-fun TvTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = TvColors.Accent,
-            onPrimary = TvColors.OnAccent,
-            background = TvColors.Background,
-            onBackground = TvColors.Text,
-            surface = TvColors.Surface,
-            onSurface = TvColors.Text
-        ),
-        content = content
-    )
+fun TvTheme(theme: String? = null, content: @Composable () -> Unit) {
+    val palette = paletteFor(theme)
+    CompositionLocalProvider(LocalTvPalette provides palette) {
+        MaterialTheme(
+            colorScheme = darkColorScheme(
+                primary = palette.accent,
+                onPrimary = palette.onAccent,
+                background = palette.background,
+                onBackground = palette.text,
+                surface = palette.surface,
+                onSurface = palette.text
+            ),
+            content = content
+        )
+    }
 }
 
 /** A button on the remote. `primary` is the teal one a screen leads with; focus always shows,

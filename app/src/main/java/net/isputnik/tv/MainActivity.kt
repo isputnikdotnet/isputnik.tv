@@ -31,6 +31,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.tv.material3.Text
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -67,11 +69,7 @@ class MainActivity : ComponentActivity() {
         SingletonImageLoader.setSafe { context ->
             ImageLoader.Builder(context).components { add(OkHttpNetworkFetcherFactory(callFactory = { api.http })) }.build()
         }
-        setContent {
-            TvTheme {
-                Box(Modifier.fillMaxSize().background(TvColors.Background)) { Root(api) }
-            }
-        }
+        setContent { Root(api) }
     }
 }
 
@@ -119,79 +117,104 @@ private fun Root(api: ApiClient) {
         }
     }
 
+    // A TV app sits in the background for days, so coming back is when a change made in Profile
+    // reaches it: the theme, the language, the name. Failing here says nothing: the next real
+    // request is the one that reports a lost server or session.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val signed = stage as? Stage.Signed ?: return@LifecycleEventEffect
+        scope.launch {
+            val user = runCatching { api.currentUser() }.getOrNull()
+            if (stage == signed && user != null && user.id == signed.user.id && user != signed.user) {
+                api.remember(user)
+                stage = Stage.Signed(user)
+            }
+        }
+    }
+
     fun check() {
         stage = Stage.Checking
         attempt++
     }
 
-    when (val current = stage) {
-        Stage.Checking -> Centered { Text(stringResource(R.string.loading), color = TvColors.Text) }
-        Stage.Unreachable -> {
-            val focus = remember { FocusRequester() }
-            LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-            Centered {
-                Text(stringResource(R.string.startup_failed), color = TvColors.Text, fontSize = 22.sp)
-                Text(api.server.orEmpty(), color = TvColors.Muted, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
-                Row {
-                    TvButton(stringResource(R.string.retry), Modifier.focusRequester(focus)) { attempt++ }
-                    Spacer(Modifier.width(16.dp))
-                    TvButton(stringResource(R.string.link_change_server)) { stage = Stage.Connect }
+    // The account's theme once it's known; before that the one it had last time. The picker and
+    // the sign-in screens are nobody's in particular.
+    val theme = when (val current = stage) {
+        is Stage.Signed -> current.user.theme
+        Stage.Who, Stage.Connect -> null
+        else -> api.activeTheme
+    }
+    TvTheme(theme) {
+        Box(Modifier.fillMaxSize().background(TvColors.Background)) {
+            when (val current = stage) {
+                Stage.Checking -> Centered { Text(stringResource(R.string.loading), color = TvColors.Text) }
+                Stage.Unreachable -> {
+                    val focus = remember { FocusRequester() }
+                    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+                    Centered {
+                        Text(stringResource(R.string.startup_failed), color = TvColors.Text, fontSize = 22.sp)
+                        Text(api.server.orEmpty(), color = TvColors.Muted, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
+                        Row {
+                            TvButton(stringResource(R.string.retry), Modifier.focusRequester(focus)) { attempt++ }
+                            Spacer(Modifier.width(16.dp))
+                            TvButton(stringResource(R.string.link_change_server)) { stage = Stage.Connect }
+                        }
+                    }
                 }
-            }
-        }
-        Stage.Connect -> ConnectScreen(api) { check() }
-        Stage.Who -> WhoScreen(
-            people = api.people,
-            onChoose = {
-                api.switchTo(it)
-                check()
-            },
-            onAdd = {
-                val back = api.activePerson
-                api.startLinking()
-                stage = Stage.Link(back)
-            }
-        )
-        is Stage.Link -> {
-            val leave = current.backTo?.let { back ->
-                {
-                    api.switchTo(back)
-                    check()
-                }
-            } ?: if (api.people.isNotEmpty()) ({ stage = Stage.Who }) else null
-            BackHandler(enabled = leave != null) { leave?.invoke() }
-            LinkScreen(
-                api,
-                onChangeServer = if (api.people.isEmpty()) ({ stage = Stage.Connect }) else null,
-                onCancel = leave,
-                onLinked = { check() }
-            )
-        }
-        is Stage.Signed -> key(current.user.id) {
-            val features = remember { listOf<Feature>(VideoFeature(VideoApi(api), current.user.id)) }
-            InLanguage(current.user.language) {
-                Shell(
-                    features,
-                    current.user,
+                Stage.Connect -> ConnectScreen(api) { check() }
+                Stage.Who -> WhoScreen(
                     people = api.people,
-                    onSwitch = {
+                    onChoose = {
                         api.switchTo(it)
                         check()
                     },
                     onAdd = {
+                        val back = api.activePerson
                         api.startLinking()
-                        stage = Stage.Link(current.user.id)
-                    },
-                    onUnlink = {
-                        scope.launch {
-                            // Off the server first, so it's gone from Profile too; forgotten here either way.
-                            runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
-                            api.clearSession()
-                            afterLeaving()
-                        }
-                    },
-                    updates = updates
+                        stage = Stage.Link(back)
+                    }
                 )
+                is Stage.Link -> {
+                    val leave = current.backTo?.let { back ->
+                        {
+                            api.switchTo(back)
+                            check()
+                        }
+                    } ?: if (api.people.isNotEmpty()) ({ stage = Stage.Who }) else null
+                    BackHandler(enabled = leave != null) { leave?.invoke() }
+                    LinkScreen(
+                        api,
+                        onChangeServer = if (api.people.isEmpty()) ({ stage = Stage.Connect }) else null,
+                        onCancel = leave,
+                        onLinked = { check() }
+                    )
+                }
+                is Stage.Signed -> key(current.user.id) {
+                    val features = remember { listOf<Feature>(VideoFeature(VideoApi(api), current.user.id)) }
+                    InLanguage(current.user.language) {
+                        Shell(
+                            features,
+                            current.user,
+                            people = api.people,
+                            onSwitch = {
+                                api.switchTo(it)
+                                check()
+                            },
+                            onAdd = {
+                                api.startLinking()
+                                stage = Stage.Link(current.user.id)
+                            },
+                            onUnlink = {
+                                scope.launch {
+                                    // Off the server first, so it's gone from Profile too; forgotten here either way.
+                                    runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
+                                    api.clearSession()
+                                    afterLeaving()
+                                }
+                            },
+                            updates = updates
+                        )
+                    }
+                }
             }
         }
     }

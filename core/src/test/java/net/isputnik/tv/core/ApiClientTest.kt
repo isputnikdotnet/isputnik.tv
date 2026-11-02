@@ -57,6 +57,20 @@ class ApiClientTest {
         assertTrue(!store.text!!.contains("isputnik_session"))
     }
 
+    @Test fun `each person's theme is kept for next time, and goes when they do`() = runBlocking {
+        val api = client()
+        server.enqueue(MockResponse().setBody("""{"user":{"id":"a","displayName":"Ann","theme":"plain-light"}}"""))
+        api.remember(api.currentUser()!!)
+        assertEquals("plain-light", ApiClient(store, "iSputnikTV/test").activeTheme)
+
+        api.startLinking()
+        assertNull(api.activeTheme)
+        api.switchTo("a")
+        assertEquals("plain-light", api.activeTheme)
+        api.clearSession()
+        assertNull(api.activeTheme)
+    }
+
     @Test fun `each person keeps their own session, across runs`() = runBlocking {
         val api = client()
         server.enqueue(MockResponse().addHeader("Set-Cookie", "isputnik_session=first; Path=/").setBody("""{"user":{"id":"a","displayName":"Ann"}}"""))

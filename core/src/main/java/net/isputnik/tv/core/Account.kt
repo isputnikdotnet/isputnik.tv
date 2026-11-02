@@ -2,7 +2,7 @@ package net.isputnik.tv.core
 
 import kotlinx.serialization.Serializable
 
-@Serializable data class User(val id: String, val displayName: String = "", val language: String? = null)
+@Serializable data class User(val id: String, val displayName: String = "", val language: String? = null, val theme: String? = null)
 @Serializable data class Me(val user: User? = null)
 
 /** POST /api/auth/device/start */

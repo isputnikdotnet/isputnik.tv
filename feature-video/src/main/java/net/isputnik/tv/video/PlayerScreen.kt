@@ -423,7 +423,7 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
         }
 
         if (showControls && layer != Layer.NEXT_CARD) {
-            Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color(0xB30A1420)).padding(horizontal = 40.dp, vertical = 18.dp)) {
+            Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(TvColors.Background.copy(alpha = 0.7f)).padding(horizontal = 40.dp, vertical = 18.dp)) {
                 Text(info.heading(), color = TvColors.Text, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 notice?.let { Text(stringResource(it), color = TvColors.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 3.dp)) }
                 Spacer(Modifier.height(10.dp))
@@ -469,7 +469,7 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
                     .padding(end = 32.dp, bottom = 32.dp)
                     .width(340.dp)
                     .clip(shape)
-                    .background(Color(0xF20A1420))
+                    .background(TvColors.Background.copy(alpha = 0.95f))
                     .border(1.dp, Color(0x33FFFFFF), shape)
                     .padding(18.dp)
             ) {
@@ -496,7 +496,7 @@ private fun ChoiceMenu(title: String, choices: List<Choice>, focus: FocusRequest
     val focused = choices.firstOrNull { it.selected } ?: choices.firstOrNull()
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd) {
         Column(
-            Modifier.fillMaxHeight().width(330.dp).background(Color(0xF20A1420)).padding(horizontal = 18.dp, vertical = 26.dp)
+            Modifier.fillMaxHeight().width(330.dp).background(TvColors.Background.copy(alpha = 0.95f)).padding(horizontal = 18.dp, vertical = 26.dp)
         ) {
             Text(title, color = TvColors.Text, fontSize = 20.sp, modifier = Modifier.padding(bottom = 12.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {

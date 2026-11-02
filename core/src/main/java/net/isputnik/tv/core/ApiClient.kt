@@ -30,7 +30,7 @@ private data class StoredCookie(
     val secure: Boolean, val httpOnly: Boolean, val hostOnly: Boolean
 )
 
-@Serializable private data class StoredPerson(val id: String, val name: String, val cookies: List<StoredCookie> = emptyList())
+@Serializable private data class StoredPerson(val id: String, val name: String, val cookies: List<StoredCookie> = emptyList(), val theme: String? = null)
 
 @Serializable
 private data class Stored(
@@ -131,10 +131,13 @@ class ApiClient(private val store: TextStore, userAgent: String) {
     val people: List<Person> get() = synchronized(lock) { saved.map { Person(it.id, it.name) } }
     val activePerson: String? get() = synchronized(lock) { activeId }
 
+    /** The theme this person had when last seen, so the app opens in it before the server answers. */
+    val activeTheme: String? get() = synchronized(lock) { saved.firstOrNull { it.id == activeId }?.theme }
+
     /** The session in use is this person's: keeps them on this TV, by name for the picker. */
     fun remember(user: User) = synchronized(lock) {
         activeId = user.id
-        val entry = StoredPerson(user.id, user.displayName, cookies.map(::fromCookie))
+        val entry = StoredPerson(user.id, user.displayName, cookies.map(::fromCookie), user.theme)
         saved = if (saved.any { it.id == user.id }) saved.map { if (it.id == user.id) entry else it } else saved + entry
         persist()
     }
