@@ -38,10 +38,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
@@ -56,7 +53,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.tv.material3.Text
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.core.LocalFocusMemory
@@ -65,6 +61,7 @@ import net.isputnik.tv.core.PageMessage
 import net.isputnik.tv.core.PosterCard
 import net.isputnik.tv.core.ProgressLine
 import net.isputnik.tv.core.RestoreFocus
+import net.isputnik.tv.core.ShowsBackdrop
 import net.isputnik.tv.core.TvButton
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.remembersFocus
@@ -86,23 +83,12 @@ private fun timeLeft(minutes: Int?): String? = when {
     else -> stringResource(R.string.video_left_minutes, minutes)
 }
 
-/** The owner's banner: the title in wide letters, a line about it, how far you got, two buttons. */
+/** The owner's banner: the title in wide letters, a line about it, how far you got, two
+ *  buttons — words over the title's backdrop, which fills the screen behind the page. */
 @Composable
-private fun Banner(video: VideoApi, banner: BannerModel, nav: Navigator) {
-    val shape = RoundedCornerShape(14.dp)
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(176.dp)
-            .clip(shape)
-            .background(TvColors.Surface)
-            .border(1.dp, Color(0x33FFFFFF), shape)
-    ) {
-        banner.backdrop?.let {
-            AsyncImage(model = video.absolute(it), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-        }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to TvColors.Background.copy(alpha = 0.95f), 0.55f to TvColors.Background.copy(alpha = 0.65f), 1f to TvColors.Background.copy(alpha = 0f))))
-        Column(Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 16.dp), verticalArrangement = Arrangement.Center) {
+private fun Banner(banner: BannerModel, nav: Navigator) {
+    Box(Modifier.fillMaxWidth().height(176.dp)) {
+        Column(Modifier.fillMaxSize().padding(vertical = 16.dp), verticalArrangement = Arrangement.Center) {
             Text(
                 banner.title.uppercase(),
                 color = TvColors.Text,
@@ -225,10 +211,11 @@ internal fun HomePage(video: VideoApi, store: VideoStore, nav: Navigator) {
         data == null -> PageMessage(stringResource(R.string.video_loading))
         data.resume.isEmpty() && data.movies.isEmpty() && data.shows.isEmpty() -> PageMessage(stringResource(R.string.video_empty))
         else -> {
+            ShowsBackdrop(data.banner?.backdrop?.let(video::absolute))
             LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp)) {
                 data.banner?.let { banner ->
                     item(key = "banner") {
-                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 18.dp)) { Banner(video, banner, nav) }
+                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 18.dp)) { Banner(banner, nav) }
                     }
                 }
                 if (data.resume.isNotEmpty()) {
@@ -316,6 +303,7 @@ internal fun LibraryPage(video: VideoApi, store: VideoStore, nav: Navigator, kin
         data == null -> PageMessage(stringResource(R.string.video_loading))
         data.items.isEmpty() -> PageMessage(stringResource(R.string.video_empty))
         else -> {
+            ShowsBackdrop(data.banner?.backdrop?.let(video::absolute))
             LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(top = 2.dp, bottom = 28.dp)) {
                 item(key = "head") {
                     Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -328,7 +316,7 @@ internal fun LibraryPage(video: VideoApi, store: VideoStore, nav: Navigator, kin
                 }
                 data.banner?.let { banner ->
                     item(key = "banner") {
-                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 16.dp)) { Banner(video, banner, nav) }
+                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 16.dp)) { Banner(banner, nav) }
                     }
                 }
                 if (data.sets.isNotEmpty()) {

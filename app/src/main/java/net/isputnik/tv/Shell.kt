@@ -30,8 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
+import net.isputnik.tv.core.BackdropLayer
 import net.isputnik.tv.core.Destination
 import net.isputnik.tv.core.Feature
+import net.isputnik.tv.core.LocalPageBackdrop
+import net.isputnik.tv.core.PageBackdrop
 import net.isputnik.tv.core.FocusMemory
 import net.isputnik.tv.core.LocalFocusMemory
 import net.isputnik.tv.core.LocalNavigator
@@ -130,7 +133,11 @@ internal fun Shell(
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
     val route = nav.current
-    Column(Modifier.fillMaxSize()) {
+    // The page's backdrop, under the menu as well: one picture behind the whole screen.
+    val backdrop = remember { PageBackdrop() }
+    Box(Modifier.fillMaxSize()) {
+        BackdropLayer(backdrop.url)
+        Column(Modifier.fillMaxSize()) {
         if (destinations.any { it.route == route }) {
             TopBar(
                 logo = R.drawable.ic_launcher_foreground,
@@ -149,11 +156,12 @@ internal fun Shell(
                 holder.SaveableStateProvider(route.key) {
                     val last = rememberSaveable { mutableStateOf<String?>(null) }
                     val memory = remember { FocusMemory(last) }
-                    CompositionLocalProvider(LocalFocusMemory provides memory, LocalNavigator provides nav) {
+                    CompositionLocalProvider(LocalFocusMemory provides memory, LocalNavigator provides nav, LocalPageBackdrop provides backdrop) {
                         all.first { it.owns(route) }.Content(route, nav)
                     }
                 }
             }
+        }
         }
     }
 }

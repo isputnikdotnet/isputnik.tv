@@ -58,8 +58,8 @@ private fun MenuItem(
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(19.dp))
-                Spacer(Modifier.width(7.dp))
+                Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(label, color = tint, fontSize = 14.sp, maxLines = 1)
             }
         }
@@ -87,7 +87,7 @@ fun TopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Launcher art keeps to a safe zone in the middle of its canvas, so it's drawn larger here.
-        Image(painterResource(logo), contentDescription = null, modifier = Modifier.size(40.dp).scale(1.45f))
+        Image(painterResource(logo), contentDescription = null, modifier = Modifier.size(40.dp).scale(1.15f))
         Spacer(Modifier.width(8.dp))
         Text(appName, color = TvColors.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
@@ -120,8 +120,8 @@ fun TopBar(
                 .padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.size(26.dp).clip(CircleShape).background(TvColors.SurfaceRaised), contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.ic_person), contentDescription = null, tint = TvColors.Text, modifier = Modifier.size(18.dp))
+            Box(Modifier.size(22.dp).clip(CircleShape).background(TvColors.SurfaceRaised), contentAlignment = Alignment.Center) {
+                Icon(painterResource(R.drawable.ic_person), contentDescription = null, tint = TvColors.Text, modifier = Modifier.size(15.dp))
             }
             Spacer(Modifier.width(8.dp))
             Text(personName, color = if (focused) TvColors.OnAccent else TvColors.Text, fontSize = 14.sp, maxLines = 1)
