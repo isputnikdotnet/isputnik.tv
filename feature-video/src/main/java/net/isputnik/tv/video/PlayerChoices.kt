@@ -21,7 +21,11 @@ data class SubtitleTrack(
 
 @Serializable data class IntroMark(val start: Double, val end: Double)
 @Serializable data class CreditsMark(val start: Double)
-@Serializable data class Markers(val intro: IntroMark? = null, val credits: CreditsMark? = null)
+/** `recap` ("Previously on") from engine 0.17.0 on; an older one leaves it out. */
+@Serializable data class Markers(val recap: IntroMark? = null, val intro: IntroMark? = null, val credits: CreditsMark? = null)
+
+/** What Skip passes over: the recap or the intro. */
+enum class Skippable { RECAP, INTRO }
 @Serializable data class NextTitle(val id: String, val season: Int? = null, val episode: Int? = null, val title: String? = null)
 
 const val SUBTITLES_OFF = "off"
@@ -53,6 +57,15 @@ fun pickSubtitle(tracks: List<SubtitleTrack>, preference: String?): SubtitleTrac
 fun inIntro(markers: Markers?, seconds: Double): Boolean {
     val intro = markers?.intro ?: return false
     return seconds >= intro.start && seconds < intro.end
+}
+
+/** The recap or the intro playing now, and where Skip lands; null between them. */
+fun skippableAt(markers: Markers?, seconds: Double): Pair<Skippable, Double>? {
+    val recap = markers?.recap
+    if (recap != null && seconds >= recap.start && seconds < recap.end) return Skippable.RECAP to recap.end
+    val intro = markers?.intro
+    if (intro != null && inIntro(markers, seconds)) return Skippable.INTRO to intro.end
+    return null
 }
 
 fun inCredits(markers: Markers?, seconds: Double): Boolean {

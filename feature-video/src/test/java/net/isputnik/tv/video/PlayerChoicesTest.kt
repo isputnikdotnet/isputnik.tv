@@ -45,8 +45,18 @@ class PlayerChoicesTest {
         assertNull(pickSubtitle(listOf(subtitle("a", "en")), null))
     }
 
+    @Test fun `Skip passes over the recap, then the intro, each to its own end`() {
+        val markers = Markers(recap = IntroMark(18.0, 80.0), intro = IntroMark(200.0, 270.0))
+        assertNull(skippableAt(markers, 17.9))
+        assertEquals(Skippable.RECAP to 80.0, skippableAt(markers, 18.0))
+        assertNull(skippableAt(markers, 80.0))
+        assertEquals(Skippable.INTRO to 270.0, skippableAt(markers, 230.0))
+        // An engine from before recaps sends none.
+        assertEquals(Skippable.INTRO to 270.0, skippableAt(Markers(intro = IntroMark(200.0, 270.0)), 230.0))
+    }
+
     @Test fun `Skip intro shows only inside the intro, and the card from the credits on`() {
-        val markers = Markers(IntroMark(5.0, 20.0), CreditsMark(100.0))
+        val markers = Markers(intro = IntroMark(5.0, 20.0), credits = CreditsMark(100.0))
         assertFalse(inIntro(markers, 4.9))
         assertTrue(inIntro(markers, 5.0))
         assertFalse(inIntro(markers, 20.0))

@@ -356,7 +356,8 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
         wake++
     }
     val seconds = position / 1000.0
-    val intro = info.markers?.intro?.takeIf { inIntro(info.markers, seconds) }
+    // The recap or the intro playing now: Skip passes over it.
+    val skip = skippableAt(info.markers, seconds)
     val hasAudioChoice = info.audioTracks.size > 1
     val hasSubtitleChoice = info.subtitleTracks.isNotEmpty()
 
@@ -375,10 +376,10 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
                 KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_REWIND -> { seek(-STEP_BACK_MS); true }
                 KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { seek(STEP_FORWARD_MS); true }
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> { toggle(); true }
-                // While the intro plays, Select is the Skip intro on screen.
+                // While the recap or intro plays, Select is the Skip on screen.
                 KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                    if (intro != null) {
-                        tv.player.seekTo((intro.end * 1000).toLong())
+                    if (skip != null) {
+                        tv.player.seekTo((skip.second * 1000).toLong())
                         wake++
                     } else {
                         toggle()
@@ -407,7 +408,7 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
             }
         )
 
-        if (intro != null && layer == Layer.PICTURE) {
+        if (skip != null && layer == Layer.PICTURE) {
             val shape = RoundedCornerShape(8.dp)
             Box(
                 Modifier
@@ -418,7 +419,10 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
                     .border(3.dp, Color.White, shape)
                     .padding(horizontal = 22.dp, vertical = 11.dp)
             ) {
-                Text(stringResource(R.string.player_skip_intro), color = TvColors.OnAccent, fontSize = 16.sp)
+                Text(
+                    stringResource(if (skip.first == Skippable.RECAP) R.string.player_skip_recap else R.string.player_skip_intro),
+                    color = TvColors.OnAccent, fontSize = 16.sp
+                )
             }
         }
 
