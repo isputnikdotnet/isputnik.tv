@@ -173,6 +173,25 @@ internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolea
     }
 }
 
+private fun listedCard(video: VideoApi, nav: Navigator, item: ListedTitle, keyPrefix: String) = RowCard(
+    key = "$keyPrefix/${item.kind}/${item.id}",
+    title = item.title,
+    picture = item.poster?.let(video::absolute),
+    subtitle = item.year?.toString(),
+    onClick = { nav.push(if (item.kind == "shows") VideoRoute.ShowPage(item.id) else VideoRoute.MoviePage(item.id)) }
+)
+
+@Composable
+private fun nameOf(name: RowName): String = when (name) {
+    is RowName.Given -> name.text
+    is RowName.Res -> stringResource(name.id)
+    is RowName.Joined -> when (name.kind) {
+        "movies" -> "${name.what} · ${stringResource(R.string.video_movies)}"
+        "shows" -> "${name.what} · ${stringResource(R.string.video_shows)}"
+        else -> name.what
+    }
+}
+
 private fun summaryCard(video: VideoApi, nav: Navigator, kind: Kind, item: Summary, keyPrefix: String) = RowCard(
     key = "$keyPrefix/${item.id}",
     title = item.title,
@@ -209,7 +228,7 @@ internal fun HomePage(video: VideoApi, store: VideoStore, nav: Navigator) {
         store.available == false -> PageMessage(stringResource(R.string.video_unavailable), stringResource(R.string.video_retry), retry)
         data == null && failed -> PageMessage(stringResource(R.string.video_load_failed), stringResource(R.string.video_retry), retry)
         data == null -> PageMessage(stringResource(R.string.video_loading))
-        data.resume.isEmpty() && data.movies.isEmpty() && data.shows.isEmpty() -> PageMessage(stringResource(R.string.video_empty))
+        data.isEmpty -> PageMessage(stringResource(R.string.video_empty))
         else -> {
             ShowsBackdrop(data.banner?.backdrop?.let(video::absolute))
             LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp)) {
@@ -218,25 +237,36 @@ internal fun HomePage(video: VideoApi, store: VideoStore, nav: Navigator) {
                         Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 18.dp)) { Banner(banner, nav) }
                     }
                 }
-                if (data.resume.isNotEmpty()) {
-                    item(key = "resume") {
-                        PosterRow(stringResource(R.string.video_continue), data.resume.map { item ->
-                            RowCard(
-                                key = "resume/${item.id}",
-                                title = item.show?.title ?: item.title,
-                                picture = video.posterOf(item),
-                                subtitle = if (item.show != null) episodeLabel(item) else null,
-                                progress = if (item.resume) fractionOf(item.position, item.duration) else null,
-                                onClick = { nav.push(VideoRoute.Play(item.id)) }
-                            )
-                        }, defaultFocus = data.banner == null)
+                // The rows this person's video page has, in its order; an empty one isn't drawn.
+                // With no banner, the first row drawn takes focus.
+                val drawn = data.rows.filter {
+                    when (it) {
+                        is HomeEntry.Resume -> data.resume.isNotEmpty()
+                        is HomeEntry.Titles -> it.items.isNotEmpty()
+                        is HomeEntry.Sets -> it.sets.isNotEmpty()
                     }
                 }
-                if (data.movies.isNotEmpty()) {
-                    item(key = "movies") { PosterRow(stringResource(R.string.video_recent_movies), data.movies.take(30).map { summaryCard(video, nav, Kind.MOVIES, it, "movies") }, defaultFocus = data.banner == null && data.resume.isEmpty()) }
-                }
-                if (data.shows.isNotEmpty()) {
-                    item(key = "shows") { PosterRow(stringResource(R.string.video_recent_shows), data.shows.take(30).map { summaryCard(video, nav, Kind.SHOWS, it, "shows") }, defaultFocus = data.banner == null && data.resume.isEmpty() && data.movies.isEmpty()) }
+                drawn.forEachIndexed { index, entry ->
+                    val first = data.banner == null && index == 0
+                    item(key = "row/${entry.key}") {
+                        val title = nameOf(entry.name)
+                        when (entry) {
+                            is HomeEntry.Resume -> PosterRow(title, data.resume.map { item ->
+                                RowCard(
+                                    key = "resume/${item.id}",
+                                    title = item.show?.title ?: item.title,
+                                    picture = video.posterOf(item),
+                                    subtitle = if (item.show != null) episodeLabel(item) else null,
+                                    progress = if (item.resume) fractionOf(item.position, item.duration) else null,
+                                    onClick = { nav.push(VideoRoute.Play(item.id)) }
+                                )
+                            }, defaultFocus = first)
+                            is HomeEntry.Titles -> PosterRow(title, entry.items.map { listedCard(video, nav, it, entry.key) }, defaultFocus = first)
+                            is HomeEntry.Sets -> PosterRow(title, entry.sets.map { set ->
+                                RowCard("${entry.key}/${set.id}", set.name, set.poster?.let(video::absolute), pluralStringResource(R.plurals.video_set_films, set.films, set.films)) { nav.push(VideoRoute.SetPage(set.id)) }
+                            }, defaultFocus = first)
+                        }
+                    }
                 }
             }
             RestoreFocus(true)

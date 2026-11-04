@@ -58,4 +58,23 @@ class VideoStoreTest {
         assertEquals("a", FocusMemory.choose(null, "a", present))
         assertNull(FocusMemory.choose("gone", "also-gone", present))
     }
+
+    @Test fun `a row is named from what it asks for, as the web page names it`() {
+        val libraries = mapOf("lib_kids" to "Kids")
+        assertEquals(RowName.Given("Cartoons"), rowName(HomeRow("r", "titles", title = "Cartoons"), libraries))
+        assertEquals(RowName.Res(R.string.video_recent_movies), rowName(HomeRow("r", "titles", kind = "movies"), libraries))
+        assertEquals(RowName.Res(R.string.video_recent_all), rowName(HomeRow("r", "titles"), libraries))
+        assertEquals(RowName.Joined("Comedy, Drama", "shows"), rowName(HomeRow("r", "titles", kind = "shows", genres = listOf("Comedy", "Drama")), libraries))
+        assertEquals(RowName.Joined("Kids", "all"), rowName(HomeRow("r", "titles", libraries = listOf("lib_kids")), libraries))
+        assertEquals(RowName.Res(R.string.video_movies), rowName(HomeRow("r", "titles", kind = "movies", sort = "title"), libraries))
+        assertEquals(RowName.Given("Family night"), rowName(HomeRow("r", "collection", collectionId = "c"), libraries, "Family night"))
+        assertEquals(RowName.Res(R.string.video_my_list), rowName(HomeRow("r", "mylist"), libraries))
+    }
+
+    @Test fun `home is empty only when no row has anything in it`() {
+        val film = ListedTitle("movies", "m", "Film")
+        assertTrue(HomeData(emptyList(), listOf(HomeEntry.Resume("c", RowName.Res(0)), HomeEntry.Titles("t", RowName.Res(0), emptyList())), null).isEmpty)
+        assertFalse(HomeData(emptyList(), listOf(HomeEntry.Titles("t", RowName.Res(0), listOf(film))), null).isEmpty)
+        assertFalse(HomeData(listOf(episode), emptyList(), null).isEmpty)
+    }
 }

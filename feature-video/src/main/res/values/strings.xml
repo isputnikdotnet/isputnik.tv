@@ -14,6 +14,10 @@
     <string name="video_shows">Shows</string>
     <string name="video_recent_movies">Recently added movies</string>
     <string name="video_recent_shows">Recently added shows</string>
+    <string name="video_recent_all">Recently added</string>
+    <string name="video_movies_and_shows">Movies and shows</string>
+    <string name="video_my_list">My list</string>
+    <string name="video_collection">Collection</string>
     <string name="video_heading_movies">Movies</string>
     <string name="video_heading_shows">TV Shows</string>
     <string name="video_private_collection">Your private collection</string>

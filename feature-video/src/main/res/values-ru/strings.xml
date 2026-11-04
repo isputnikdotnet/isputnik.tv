@@ -14,6 +14,10 @@
     <string name="video_shows">Сериалы</string>
     <string name="video_recent_movies">Новые фильмы</string>
     <string name="video_recent_shows">Новые сериалы</string>
+    <string name="video_recent_all">Недавно добавленные</string>
+    <string name="video_movies_and_shows">Фильмы и сериалы</string>
+    <string name="video_my_list">Мой список</string>
+    <string name="video_collection">Коллекция</string>
     <string name="video_heading_movies">Фильмы</string>
     <string name="video_heading_shows">Сериалы</string>
     <string name="video_private_collection">Ваша личная коллекция</string>

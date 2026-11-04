@@ -2,6 +2,7 @@ package net.isputnik.tv.video
 
 import kotlinx.serialization.Serializable
 import net.isputnik.tv.core.ApiClient
+import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.player.PlaySource
 import net.isputnik.tv.player.SideSubtitle
 import java.net.URLEncoder
@@ -57,6 +58,21 @@ data class SetDetail(
     val films: List<SetFilm> = emptyList()
 )
 
+/** One row of the video page as home keeps it (home 4.63+): a question, never a list of
+ *  titles. A type this app doesn't know is skipped, so a newer home can't break an older TV. */
+@Serializable
+data class HomeRow(
+    val id: String, val type: String, val title: String? = null, val hidden: Boolean = false,
+    val kind: String = "all", val libraries: List<String> = emptyList(), val genres: List<String> = emptyList(),
+    val sort: String = "added", val collectionId: String? = null
+)
+@Serializable data class HomeLayout(val rows: List<HomeRow> = emptyList())
+/** A film or show in a list that holds both: the engine's /titles, My list, a Collection row. */
+@Serializable data class ListedTitle(val kind: String, val id: String, val title: String, val year: Int? = null, val poster: String? = null)
+@Serializable data class TitleList(val name: String? = null, val items: List<ListedTitle> = emptyList())
+@Serializable data class LibraryRef(val id: String, val name: String)
+@Serializable data class LibraryList(val libraries: List<LibraryRef> = emptyList())
+
 @Serializable data class Busy(val limit: Int = 0, val reason: String? = null, val title: String? = null)
 @Serializable data class Playback(val mode: String = "none", val url: String? = null, val original: String? = null, val busy: Busy? = null)
 
@@ -103,6 +119,30 @@ class VideoApi(val api: ApiClient) {
         return api.get("$BASE/play/$id" + if (query.isEmpty()) "" else "?$query")
     }
     suspend fun sets(): List<SetSummary> = api.get<Page<SetSummary>>("$BASE/sets").items
+
+    /** The rows this person's video page shows (their own, else the household's); null from a
+     *  home before 4.63, which had no such thing. */
+    suspend fun homeLayout(): HomeLayout? = try {
+        api.get("/api/video/home")
+    } catch (e: ApiException) {
+        if (e.code == 404) null else throw e
+    }
+
+    /** What a titles row asks for, films and shows together (engine 0.19+). */
+    suspend fun titles(row: HomeRow, size: Int = ROW_SIZE): List<ListedTitle> {
+        val query = buildList {
+            add("pageSize=$size")
+            add("sort=${row.sort}")
+            if (row.kind != "all") add("kind=${row.kind}")
+            if (row.libraries.isNotEmpty()) add("libraries=" + URLEncoder.encode(row.libraries.joinToString(","), "UTF-8"))
+            if (row.genres.isNotEmpty()) add("genres=" + URLEncoder.encode(row.genres.joinToString(","), "UTF-8"))
+        }.joinToString("&")
+        return api.get<Page<ListedTitle>>("$BASE/titles?$query").items
+    }
+
+    suspend fun myList(): List<ListedTitle> = api.get<TitleList>("/api/video/my-list").items
+    suspend fun collectionRow(id: String): TitleList = api.get("/api/video/home/collections/${URLEncoder.encode(id, "UTF-8")}")
+    suspend fun libraries(): List<LibraryRef> = api.get<LibraryList>("$BASE/libraries").libraries
     suspend fun set(id: String): SetDetail = api.get("$BASE/sets/$id")
 
     suspend fun list(kind: Kind, sort: Sort): List<Summary> {
@@ -133,8 +173,10 @@ class VideoApi(val api: ApiClient) {
     fun posterOf(item: ContinueItem): String = api.absolute("$BASE/art/${item.show?.id ?: item.id}/poster")
     fun absolute(path: String): String = api.absolute(path)
 
-    private companion object {
-        const val BASE = "/video/api"
+    companion object {
+        private const val BASE = "/video/api"
+        /** About what a row shows before it has to scroll a long way. */
+        const val ROW_SIZE = 30
     }
 }
 
