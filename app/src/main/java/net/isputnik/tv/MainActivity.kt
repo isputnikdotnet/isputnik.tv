@@ -47,6 +47,7 @@ import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.TvTheme
 import net.isputnik.tv.core.User
 import net.isputnik.tv.core.currentUser
+import net.isputnik.tv.games.GamesFeature
 import net.isputnik.tv.video.VideoApi
 import net.isputnik.tv.video.VideoFeature
 import okhttp3.CookieJar
@@ -189,7 +190,12 @@ private fun Root(api: ApiClient) {
                     )
                 }
                 is Stage.Signed -> key(current.user.id) {
-                    val features = remember { listOf<Feature>(VideoFeature(VideoApi(api), current.user.id)) }
+                    val video = remember { VideoFeature(VideoApi(api), current.user.id) }
+                    // Games joins the menu once the server says this person may play (as the
+                    // website decides its Games entry); video is there from the start.
+                    var games by remember { mutableStateOf<Feature?>(null) }
+                    LaunchedEffect(Unit) { if (GamesFeature.available(api)) games = GamesFeature(api, current.user.id) }
+                    val features = remember(games) { listOfNotNull<Feature>(video, games) }
                     InLanguage(current.user.language) {
                         Shell(
                             features,

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_games">Игры</string>
+    <string name="games_heading">Игры</string>
+    <string name="games_heading_line">Играйте всей семьёй</string>
+    <string name="games_all">Игры</string>
+    <string name="games_waiting_for_you">Ждут вас</string>
+    <string name="games_your_games">Ваши партии</string>
+    <string name="games_loading">Загрузка…</string>
+    <string name="games_load_failed">Не удалось связаться с играми. Проверьте подключение и попробуйте ещё раз.</string>
+    <string name="games_offline">Сервер не отвечает. Пробуем ещё раз…</string>
+    <string name="games_move_refused">Ход не принят; на доске партия как она есть.</string>
+
+    <string name="games_chess">Шахматы</string>
+    <string name="games_chess_line">С компьютером, вдвоём на диване или по сети</string>
+    <string name="games_checkers">Шашки</string>
+    <string name="games_checkers_line">Русские шашки на 64 клетках</string>
+    <string name="games_sputnik">Лови спутник!</string>
+    <string name="games_sputnik_line">Поймайте спутники, пока они не разбились</string>
+    <string name="games_torpedo">Торпедная атака</string>
+    <string name="games_torpedo_line">Медленные торпеды: стреляйте на упреждение</string>
+
+    <string name="games_invites_you">Приглашение: %1$s</string>
+    <string name="games_your_move_against">Ваш ход, соперник: %1$s</string>
+    <string name="games_their_move">Ход: %1$s</string>
+    <string name="games_invited_waiting">Ждём ответа: %1$s</string>
+
+    <string name="games_continue_heading">Ваша партия на этом телевизоре</string>
+    <string name="games_continue">Продолжить</string>
+    <string name="games_your_side">Ваш цвет</string>
+    <string name="games_play_white">Белые</string>
+    <string name="games_play_black">Чёрные</string>
+    <string name="games_vs_computer">С компьютером</string>
+    <string name="games_vs_computer_level">С компьютером · %1$s</string>
+    <string name="games_level_easy">Лёгкий</string>
+    <string name="games_level_normal">Средний</string>
+    <string name="games_level_hard">Сложный</string>
+    <string name="games_sofa">Вдвоём у телевизора</string>
+    <string name="games_sofa_start">Начать</string>
+    <string name="games_sofa_line">Передавайте пульт после хода</string>
+    <string name="games_vs_family">С кем-то из семьи</string>
+    <string name="games_vs_family_line">Соперник играет на телефоне или компьютере; приглашение ждёт на его странице «Игры».</string>
+    <string name="games_no_members">В семье пока больше никого нет.</string>
+    <string name="games_invite_failed">Не удалось отправить приглашение. Попробуйте ещё раз.</string>
+    <string name="games_online">По сети</string>
+
+    <string name="games_you">Вы</string>
+    <string name="games_computer">Компьютер</string>
+    <string name="games_white">Белые</string>
+    <string name="games_black">Чёрные</string>
+    <string name="games_your_move">Ваш ход</string>
+    <string name="games_your_move_check">Ваш ход: вам шах</string>
+    <string name="games_side_to_move">Ход: %1$s</string>
+    <string name="games_computer_thinking">Компьютер думает…</string>
+    <string name="games_invited_you">Вас приглашают сыграть</string>
+    <string name="games_waiting_answer">Ждём ответа: %1$s</string>
+    <string name="games_declined">Приглашение отклонено</string>
+    <string name="games_cancelled">Приглашение отозвано</string>
+    <string name="games_draw">Ничья</string>
+    <string name="games_you_win">Вы победили</string>
+    <string name="games_wins">Победа: %1$s</string>
+    <string name="games_reason_checkmate">мат</string>
+    <string name="games_reason_stalemate">пат</string>
+    <string name="games_reason_resigned">сдача</string>
+    <string name="games_reason_repetition">троекратное повторение</string>
+    <string name="games_reason_fifty">пятьдесят ходов без взятий</string>
+    <string name="games_reason_material">недостаточно фигур для мата</string>
+    <string name="games_accept">Принять</string>
+    <string name="games_decline">Отклонить</string>
+    <string name="games_withdraw">Отозвать приглашение</string>
+    <string name="games_resign">Сдаться</string>
+    <string name="games_resign_confirm">Нажмите ещё раз, чтобы сдаться</string>
+    <string name="games_new_game">Новая партия</string>
+    <string name="games_leave">Выйти</string>
+
+    <string name="games_start">Начать</string>
+    <string name="games_play_again">Ещё раз</string>
+    <string name="games_resume">Продолжить</string>
+    <string name="games_paused">Пауза</string>
+    <string name="games_family_best">Рекорды семьи</string>
+    <string name="games_arcade_result">%1$d · ваш рекорд %2$d</string>
+    <string name="games_arcade_sending">%1$d · сохраняем…</string>
+    <string name="games_arcade_unsent">%1$d · не удалось сохранить</string>
+
+    <string name="games_sputnik_a">Игра А</string>
+    <string name="games_sputnik_b">Игра Б</string>
+    <string name="games_sputnik_how">Влево и вправо — робот переходит; вверх и вниз — сачок поднимается и опускается. Игра Б быстрее.</string>
+    <string name="games_sputnik_playing">ОК — пауза.</string>
+
+    <string name="games_torpedo_how">Держите влево или вправо, чтобы повернуть перископ; ОК — пуск. Торпеда медленная: цельтесь туда, где будет корабль.</string>
+    <string name="games_torpedo_playing">Держите влево или вправо — поворот, ОК — пуск. Назад — пауза.</string>
+    <string name="games_torpedo_start_prompt">Перископ поднят</string>
+    <string name="games_torpedo_bonus_prompt">Призовой раунд! Нажмите ОК</string>
+    <string name="games_torpedo_hit">Попадание! +%1$d</string>
+    <string name="games_torpedo_miss">Мимо</string>
+    <string name="games_torpedo_bonus">Призовой раунд заработан</string>
+    <string name="games_torpedo_score">Очки</string>
+    <string name="games_torpedo_tubes">Торпеды %1$d из %2$d</string>
+    <string name="games_torpedo_bonus_at">Приз от</string>
+    <string name="games_torpedo_bonus_round">Призовой раунд</string>
+    <string name="games_torpedo_round">Раунд %1$d</string>
+    <string name="games_torpedo_clock">Время</string>
+    <string name="games_torpedo_seconds">%1$d с</string>
+</resources>

@@ -6,4 +6,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "isputnik.tv"
-include(":app", ":core", ":player", ":feature-video")
+include(":app", ":core", ":player", ":feature-video", ":feature-games")

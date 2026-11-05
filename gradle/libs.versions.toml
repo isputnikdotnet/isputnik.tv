@@ -19,5 +19,6 @@ coil-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
+androidsvg = "com.caverock:androidsvg-aar:1.4"
 zxing = "com.google.zxing:core:3.5.3"
 junit = "junit:junit:4.13.2"

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_games">Games</string>
+    <string name="games_heading">Games</string>
+    <string name="games_heading_line">Play with the family</string>
+    <string name="games_all">Games</string>
+    <string name="games_waiting_for_you">Waiting for you</string>
+    <string name="games_your_games">Your games</string>
+    <string name="games_loading">Loading…</string>
+    <string name="games_load_failed">Couldn\'t reach the games. Check the connection and try again.</string>
+    <string name="games_offline">No answer from the server. Trying again…</string>
+    <string name="games_move_refused">That move wasn\'t accepted; the board shows the game as it stands.</string>
+
+    <string name="games_chess">Chess</string>
+    <string name="games_chess_line">Against the computer, on the sofa, or online</string>
+    <string name="games_checkers">Checkers</string>
+    <string name="games_checkers_line">Russian draughts on 64 squares</string>
+    <string name="games_sputnik">Sputnik Catch</string>
+    <string name="games_sputnik_line">Catch the sputniks before they crash</string>
+    <string name="games_torpedo">Torpedo Run</string>
+    <string name="games_torpedo_line">Lead the ships with slow torpedoes</string>
+
+    <string name="games_invites_you">%1$s invites you</string>
+    <string name="games_your_move_against">Your move against %1$s</string>
+    <string name="games_their_move">%1$s\'s move</string>
+    <string name="games_invited_waiting">Waiting for %1$s to answer</string>
+
+    <string name="games_continue_heading">Your game on this TV</string>
+    <string name="games_continue">Continue</string>
+    <string name="games_your_side">Your side</string>
+    <string name="games_play_white">White</string>
+    <string name="games_play_black">Black</string>
+    <string name="games_vs_computer">Against the computer</string>
+    <string name="games_vs_computer_level">Against the computer · %1$s</string>
+    <string name="games_level_easy">Easy</string>
+    <string name="games_level_normal">Normal</string>
+    <string name="games_level_hard">Hard</string>
+    <string name="games_sofa">Two on this TV</string>
+    <string name="games_sofa_start">Start</string>
+    <string name="games_sofa_line">Pass the remote between moves</string>
+    <string name="games_vs_family">Against someone in the family</string>
+    <string name="games_vs_family_line">They play on their phone or computer; the invitation waits on their Games page.</string>
+    <string name="games_no_members">Nobody else in the family yet.</string>
+    <string name="games_invite_failed">Couldn\'t send the invitation. Try again.</string>
+    <string name="games_online">Online</string>
+
+    <string name="games_you">You</string>
+    <string name="games_computer">Computer</string>
+    <string name="games_white">White</string>
+    <string name="games_black">Black</string>
+    <string name="games_your_move">Your move</string>
+    <string name="games_your_move_check">Your move: you\'re in check</string>
+    <string name="games_side_to_move">%1$s to move</string>
+    <string name="games_computer_thinking">The computer is thinking…</string>
+    <string name="games_invited_you">You\'re invited to a game</string>
+    <string name="games_waiting_answer">Waiting for %1$s to answer</string>
+    <string name="games_declined">The invitation was declined</string>
+    <string name="games_cancelled">The invitation was withdrawn</string>
+    <string name="games_draw">A draw</string>
+    <string name="games_you_win">You win</string>
+    <string name="games_wins">%1$s wins</string>
+    <string name="games_reason_checkmate">checkmate</string>
+    <string name="games_reason_stalemate">stalemate</string>
+    <string name="games_reason_resigned">resigned</string>
+    <string name="games_reason_repetition">the same position three times</string>
+    <string name="games_reason_fifty">fifty moves without a capture</string>
+    <string name="games_reason_material">not enough to mate</string>
+    <string name="games_accept">Accept</string>
+    <string name="games_decline">Decline</string>
+    <string name="games_withdraw">Withdraw the invitation</string>
+    <string name="games_resign">Resign</string>
+    <string name="games_resign_confirm">Press again to resign</string>
+    <string name="games_new_game">New game</string>
+    <string name="games_leave">Leave</string>
+
+    <string name="games_start">Start</string>
+    <string name="games_play_again">Play again</string>
+    <string name="games_resume">Resume</string>
+    <string name="games_paused">Paused</string>
+    <string name="games_family_best">Family best</string>
+    <string name="games_arcade_result">%1$d · your best %2$d</string>
+    <string name="games_arcade_sending">%1$d · saving…</string>
+    <string name="games_arcade_unsent">%1$d · couldn\'t save it</string>
+
+    <string name="games_sputnik_a">Game A</string>
+    <string name="games_sputnik_b">Game B</string>
+    <string name="games_sputnik_how">Left and right move the robot across; up and down raise and lower his net. Game B starts faster.</string>
+    <string name="games_sputnik_playing">OK pauses.</string>
+
+    <string name="games_torpedo_how">Hold left or right to turn the periscope, OK to fire. A torpedo is slow: aim where the ship will be.</string>
+    <string name="games_torpedo_playing">Hold left or right to turn, OK fires. Back pauses.</string>
+    <string name="games_torpedo_start_prompt">Up periscope</string>
+    <string name="games_torpedo_bonus_prompt">Bonus round! Press OK</string>
+    <string name="games_torpedo_hit">Hit! +%1$d</string>
+    <string name="games_torpedo_miss">Missed</string>
+    <string name="games_torpedo_bonus">Bonus round earned</string>
+    <string name="games_torpedo_score">Score</string>
+    <string name="games_torpedo_tubes">Torpedoes %1$d of %2$d</string>
+    <string name="games_torpedo_bonus_at">Bonus at</string>
+    <string name="games_torpedo_bonus_round">Bonus round</string>
+    <string name="games_torpedo_round">Round %1$d</string>
+    <string name="games_torpedo_clock">Time</string>
+    <string name="games_torpedo_seconds">%1$d s</string>
+</resources>
