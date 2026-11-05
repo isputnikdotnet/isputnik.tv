@@ -32,12 +32,25 @@ data class Episode(
 @Serializable data class Season(val number: Int, val episodes: List<Episode> = emptyList())
 @Serializable data class NextUp(val id: String, val season: Int, val episode: Int, val title: String? = null, val position: Double = 0.0)
 
+/** Someone in a title (engine 0.26+): the character played, or the job — director, writer,
+ *  composer, creator. */
+@Serializable data class Credit(val id: String, val name: String, val role: String? = null, val photo: String? = null)
+
 @Serializable
 data class Show(
     val id: String, val title: String, val year: Int? = null, val plot: String? = null,
     val genres: List<String> = emptyList(), val rating: Double? = null,
     val poster: String? = null, val backdrop: String? = null,
-    val seasons: List<Season> = emptyList(), val nextUp: NextUp? = null
+    val seasons: List<Season> = emptyList(), val nextUp: NextUp? = null,
+    val cast: List<Credit> = emptyList(), val crew: List<Credit> = emptyList()
+)
+
+/** One file of a film in several (engine 0.14+); a miniseries kept as a film names each part as
+ *  its TMDB episode (engine 0.24+). The first part's id is the film's own. */
+@Serializable
+data class Part(
+    val id: String, val part: Int, val title: String? = null, val plot: String? = null,
+    val still: String? = null, val progress: Progress? = null
 )
 
 @Serializable data class SetFilm(val id: String, val title: String, val year: Int? = null, val poster: String? = null, val progress: Progress? = null)
@@ -48,8 +61,26 @@ data class Movie(
     val id: String, val title: String, val year: Int? = null, val plot: String? = null,
     val genres: List<String> = emptyList(), val runtimeMinutes: Int? = null, val rating: Double? = null,
     val poster: String? = null, val backdrop: String? = null,
-    val progress: Progress? = null, val set: MovieSet? = null
+    val progress: Progress? = null, val set: MovieSet? = null,
+    /** What Play starts: the film, or the part this person has got to (engine 0.14+). */
+    val playId: String? = null,
+    val parts: List<Part> = emptyList(),
+    val cast: List<Credit> = emptyList(), val crew: List<Credit> = emptyList()
 )
+
+/** GET /people?q= — someone a search found. */
+@Serializable data class PersonSummary(val id: String, val name: String, val photo: String? = null, val titles: Int = 0)
+@Serializable data class PeopleList(val people: List<PersonSummary> = emptyList())
+
+/** One of a person's titles, with the parts they played or the jobs they did in it. */
+@Serializable
+data class PersonTitle(
+    val kind: String, val id: String, val title: String, val year: Int? = null, val poster: String? = null,
+    val characters: List<String> = emptyList(), val jobs: List<String> = emptyList()
+)
+
+/** GET /people/:id — someone, and what of theirs this person may see. */
+@Serializable data class Person(val id: String, val name: String, val photo: String? = null, val titles: List<PersonTitle> = emptyList())
 
 @Serializable data class SetSummary(val id: String, val name: String, val films: Int = 0, val poster: String? = null)
 @Serializable
@@ -112,6 +143,13 @@ class VideoApi(val api: ApiClient) {
     suspend fun continueWatching(): List<ContinueItem> = api.get<ContinueList>("$BASE/continue").items
     suspend fun show(id: String): Show = api.get("$BASE/shows/$id")
     suspend fun movie(id: String): Movie = api.get("$BASE/movies/$id")
+    suspend fun person(id: String): Person = api.get("$BASE/people/${URLEncoder.encode(id, "UTF-8")}")
+    /** People whose name has the words; none from an engine before 0.26, which has no people. */
+    suspend fun people(text: String): List<PersonSummary> = try {
+        api.get<PeopleList>("$BASE/people?q=${URLEncoder.encode(text, "UTF-8")}&limit=20").people
+    } catch (_: ApiException) {
+        emptyList()
+    }
     /** `audio`: the sound track wanted; `subtitle`: an image subtitle to burn in. Both change
      *  only the converted copy `playback.url` names. */
     suspend fun play(id: String, audio: Int? = null, subtitle: String? = null): PlayInfo {

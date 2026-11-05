@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copied by hand from isputnik.home apps/web/public/Assets/covers/show.svg: the same art, so a
+     title with no poster looks the same on the TV as on the website. Keep the two in step. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="200dp" android:height="300dp" android:viewportWidth="400" android:viewportHeight="600">
+    <path android:fillColor="#FF2B2442" android:pathData="M0,0h400v600h-400z" />
+    <group android:rotation="-24" android:pivotX="200" android:pivotY="240">
+        <path android:strokeColor="#FFF1F3EE" android:strokeAlpha="0.13" android:strokeWidth="10" android:pathData="M28,240a172,60 0 1,0 344,0a172,60 0 1,0 -344,0z" />
+    </group>
+    <path android:fillColor="#FFE9A95F" android:pathData="M301.7,151.3a13,13 0 1,0 26,0a13,13 0 1,0 -26,0z" />
+    <group android:translateX="115" android:translateY="151" android:scaleX="0.85" android:scaleY="0.85">
+        <path android:fillColor="#FFF1F3EE" android:fillAlpha="0.42" android:pathData="M60,20h114a16,16 0 0,1 16,16v68a16,16 0 0,1 -16,16h-114a16,16 0 0,1 -16,-16v-68a16,16 0 0,1 16,-16z" />
+        <path android:fillColor="#FFF1F3EE" android:pathData="M28,54h128a18,18 0 0,1 18,18v76a18,18 0 0,1 -18,18h-128a18,18 0 0,1 -18,-18v-76a18,18 0 0,1 18,-18z" />
+        <path android:fillColor="#FF2B2442" android:strokeColor="#FF2B2442" android:strokeWidth="8" android:strokeLineJoin="round" android:pathData="M80,88v44l38,-22z" />
+    </group>
+</vector>

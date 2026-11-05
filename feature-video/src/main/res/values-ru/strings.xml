@@ -69,4 +69,18 @@
     <string name="player_next_film_in">Следующий фильм через %1$d с</string>
     <string name="player_play_now">Смотреть сейчас</string>
     <string name="player_cancel">Отмена</string>
+    <string name="video_cast_crew">В ролях и создатели</string>
+    <string name="video_people">Люди</string>
+    <string name="video_job_director">Режиссёр</string>
+    <string name="video_job_writer">Сценарист</string>
+    <string name="video_job_composer">Композитор</string>
+    <string name="video_job_creator">Создатель</string>
+    <string name="video_parts">Части</string>
+    <string name="video_part">Часть %1$d</string>
+    <plurals name="video_person_titles">
+        <item quantity="one">%1$d фильм или сериал</item>
+        <item quantity="few">%1$d фильма или сериала</item>
+        <item quantity="many">%1$d фильмов или сериалов</item>
+        <item quantity="other">%1$d фильма или сериала</item>
+    </plurals>
 </resources>

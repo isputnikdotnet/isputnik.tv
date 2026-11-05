@@ -17,6 +17,7 @@ sealed interface VideoRoute : Route {
     data class MoviePage(val id: String) : VideoRoute { override val key = "video/movie/$id" }
     data class ShowPage(val id: String) : VideoRoute { override val key = "video/show/$id" }
     data class SetPage(val id: String) : VideoRoute { override val key = "video/set/$id" }
+    data class PersonPage(val id: String) : VideoRoute { override val key = "video/person/$id" }
     data class Play(val id: String, val fromStart: Boolean = false) : VideoRoute { override val key = "video/play/$id" }
 }
 
@@ -43,6 +44,7 @@ class VideoFeature(private val video: VideoApi, private val userId: String) : Fe
             is VideoRoute.MoviePage -> MoviePage(video, nav, page.id)
             is VideoRoute.ShowPage -> ShowPage(video, nav, page.id)
             is VideoRoute.SetPage -> SetPage(video, nav, page.id)
+            is VideoRoute.PersonPage -> PersonPage(video, nav, page.id)
             is VideoRoute.Play -> {
                 val context = LocalContext.current
                 val prefs = remember(userId) { PlayerPrefs(context, userId) }

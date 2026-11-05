@@ -58,6 +58,7 @@ import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.core.LocalFocusMemory
 import net.isputnik.tv.core.Navigator
 import net.isputnik.tv.core.PageMessage
+import net.isputnik.tv.core.PosterArt
 import net.isputnik.tv.core.PosterCard
 import net.isputnik.tv.core.ProgressLine
 import net.isputnik.tv.core.RestoreFocus
@@ -141,6 +142,7 @@ internal data class RowCard(
     val picture: String?,
     val subtitle: String? = null,
     val progress: Float? = null,
+    val art: PosterArt = PosterArt.MOVIE,
     val onClick: () -> Unit
 )
 
@@ -164,6 +166,7 @@ internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolea
                     height = PosterHeight,
                     subtitle = card.subtitle,
                     progress = card.progress,
+                    art = card.art,
                     isDefault = defaultFocus && card === cards.first(),
                     onClick = card.onClick
                 )
@@ -178,6 +181,7 @@ private fun listedCard(video: VideoApi, nav: Navigator, item: ListedTitle, keyPr
     title = item.title,
     picture = item.poster?.let(video::absolute),
     subtitle = item.year?.toString(),
+    art = PosterArt.of(item.kind),
     onClick = { nav.push(if (item.kind == "shows") VideoRoute.ShowPage(item.id) else VideoRoute.MoviePage(item.id)) }
 )
 
@@ -197,6 +201,7 @@ private fun summaryCard(video: VideoApi, nav: Navigator, kind: Kind, item: Summa
     title = item.title,
     picture = item.poster?.let(video::absolute),
     subtitle = item.year?.toString(),
+    art = if (kind == Kind.SHOWS) PosterArt.SHOW else PosterArt.MOVIE,
     onClick = { nav.push(if (kind == Kind.SHOWS) VideoRoute.ShowPage(item.id) else VideoRoute.MoviePage(item.id)) }
 )
 
@@ -258,6 +263,7 @@ internal fun HomePage(video: VideoApi, store: VideoStore, nav: Navigator) {
                                     picture = video.posterOf(item),
                                     subtitle = if (item.show != null) episodeLabel(item) else null,
                                     progress = if (item.resume) fractionOf(item.position, item.duration) else null,
+                                    art = if (item.show != null) PosterArt.SHOW else PosterArt.MOVIE,
                                     onClick = { nav.push(VideoRoute.Play(item.id)) }
                                 )
                             }, defaultFocus = first)
@@ -363,7 +369,7 @@ internal fun LibraryPage(video: VideoApi, store: VideoStore, nav: Navigator, kin
                         Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             row.forEach { title ->
                                 val card = summaryCard(video, nav, kind, title, "all")
-                                PosterCard(card.title, card.picture, card.key, PosterWidth, PosterHeight, subtitle = card.subtitle, isDefault = index == 0 && title === row.first() && data.banner == null && data.sets.isEmpty(), onClick = card.onClick)
+                                PosterCard(card.title, card.picture, card.key, PosterWidth, PosterHeight, subtitle = card.subtitle, art = card.art, isDefault = index == 0 && title === row.first() && data.banner == null && data.sets.isEmpty(), onClick = card.onClick)
                             }
                         }
                     }
@@ -379,6 +385,7 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
     var query by rememberSaveable { mutableStateOf("") }
     var movies by remember { mutableStateOf<List<Summary>>(emptyList()) }
     var shows by remember { mutableStateOf<List<Summary>>(emptyList()) }
+    var people by remember { mutableStateOf<List<PersonSummary>>(emptyList()) }
     var searched by remember { mutableStateOf<String?>(null) }
     var failed by remember { mutableStateOf(false) }
     var fieldFocused by remember { mutableStateOf(false) }
@@ -391,6 +398,7 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
         if (text.isEmpty()) {
             movies = emptyList()
             shows = emptyList()
+            people = emptyList()
             searched = null
             return@LaunchedEffect
         }
@@ -399,6 +407,7 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
             failed = false
             movies = video.search(Kind.MOVIES, text)
             shows = video.search(Kind.SHOWS, text)
+            people = video.people(text)
             searched = text
         } catch (_: java.io.IOException) {
             failed = true
@@ -418,7 +427,8 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
                 // screen, which is the name in the menu. Finishing typing means the first result.
                 keyboardActions = KeyboardActions {
                     keyboard?.hide()
-                    val first = movies.firstOrNull()?.let { "found-movies/${it.id}" } ?: shows.firstOrNull()?.let { "found-shows/${it.id}" }
+                    val first = people.firstOrNull()?.let { "found-people/${it.id}" }
+                        ?: movies.firstOrNull()?.let { "found-movies/${it.id}" } ?: shows.firstOrNull()?.let { "found-shows/${it.id}" }
                     if (first == null || !memory.focus(first)) focus.moveFocus(FocusDirection.Down)
                 },
                 modifier = Modifier
@@ -439,7 +449,10 @@ internal fun SearchPage(video: VideoApi, nav: Navigator) {
         }
         when {
             failed -> item(key = "failed") { Text(stringResource(R.string.video_load_failed), color = TvColors.Text, fontSize = 17.sp, modifier = Modifier.padding(horizontal = PageGutter)) }
-            searched != null && movies.isEmpty() && shows.isEmpty() -> item(key = "none") { Text(stringResource(R.string.video_search_none, searched ?: ""), color = TvColors.Text, fontSize = 17.sp, modifier = Modifier.padding(horizontal = PageGutter)) }
+            searched != null && movies.isEmpty() && shows.isEmpty() && people.isEmpty() -> item(key = "none") { Text(stringResource(R.string.video_search_none, searched ?: ""), color = TvColors.Text, fontSize = 17.sp, modifier = Modifier.padding(horizontal = PageGutter)) }
+        }
+        if (people.isNotEmpty()) {
+            item(key = "people") { PeopleRow(video, nav, people) }
         }
         if (movies.isNotEmpty()) {
             item(key = "movies") { PosterRow(stringResource(R.string.video_movies), movies.map { summaryCard(video, nav, Kind.MOVIES, it, "found-movies") }) }

@@ -67,4 +67,16 @@
     <string name="player_next_film_in">Next film in %1$d s</string>
     <string name="player_play_now">Play now</string>
     <string name="player_cancel">Cancel</string>
+    <string name="video_cast_crew">Cast &amp; crew</string>
+    <string name="video_people">People</string>
+    <string name="video_job_director">Director</string>
+    <string name="video_job_writer">Writer</string>
+    <string name="video_job_composer">Music</string>
+    <string name="video_job_creator">Created by</string>
+    <string name="video_parts">Parts</string>
+    <string name="video_part">Part %1$d</string>
+    <plurals name="video_person_titles">
+        <item quantity="one">%1$d film or show</item>
+        <item quantity="other">%1$d films and shows</item>
+    </plurals>
 </resources>

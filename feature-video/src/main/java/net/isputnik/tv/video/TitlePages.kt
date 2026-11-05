@@ -39,6 +39,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import net.isputnik.tv.core.Navigator
 import net.isputnik.tv.core.PageMessage
+import net.isputnik.tv.core.PosterArt
 import net.isputnik.tv.core.PosterCard
 import net.isputnik.tv.core.RestoreFocus
 import net.isputnik.tv.core.TvButton
@@ -116,7 +117,7 @@ internal fun MoviePage(video: VideoApi, nav: Navigator, id: String) {
                                 Modifier.remembersFocus("play", isDefault = true),
                                 primary = true,
                                 icon = CoreR.drawable.ic_play
-                            ) { nav.push(VideoRoute.Play(movie.id)) }
+                            ) { nav.push(VideoRoute.Play(movie.playId ?: movie.id)) }
                             if (started) {
                                 Spacer(Modifier.width(12.dp))
                                 TvButton(stringResource(R.string.video_start_over), Modifier.remembersFocus("over")) { nav.push(VideoRoute.Play(movie.id, fromStart = true)) }
@@ -125,6 +126,32 @@ internal fun MoviePage(video: VideoApi, nav: Navigator, id: String) {
                         Spacer(Modifier.height(24.dp))
                     }
                 }
+                // A film in several files: its parts, like a season's episodes — named and pictured
+                // as TMDB's episodes when the film is a miniseries there.
+                if (movie.parts.size > 1) {
+                    item(key = "parts") {
+                        Column(Modifier.padding(bottom = 18.dp)) {
+                            Text(stringResource(R.string.video_parts), color = TvColors.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = PageGutter).padding(bottom = 10.dp))
+                            LazyRow(state = rememberLazyListState(), contentPadding = PaddingValues(horizontal = PageGutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                items(movie.parts, key = { it.id }) { part ->
+                                    val number = stringResource(R.string.video_part, part.part)
+                                    PosterCard(
+                                        title = part.title ?: number,
+                                        picture = part.still?.let(video::absolute),
+                                        focusKey = "part/${part.id}",
+                                        width = 208.dp,
+                                        height = 117.dp,
+                                        subtitle = (if (part.title != null) number else "") +
+                                            if (part.progress?.watched == true) (if (part.title != null) " · " else "") + stringResource(R.string.video_watched) else "",
+                                        progress = part.progress.fraction(),
+                                        art = PosterArt.MOVIE
+                                    ) { nav.push(VideoRoute.Play(part.id)) }
+                                }
+                            }
+                        }
+                    }
+                }
+                item(key = "people") { CastAndCrewRow(video, nav, movie.cast, movie.crew) }
                 val set = movie.set
                 if (set != null && set.films.size > 1) {
                     item(key = "set") {
@@ -195,11 +222,16 @@ internal fun ShowPage(video: VideoApi, nav: Navigator, id: String) {
                                     subtitle = stringResource(R.string.video_banner_code, season.number, episode.episode) +
                                         if (episode.progress?.watched == true) " · " + stringResource(R.string.video_watched) else "",
                                     progress = episode.progress.fraction(),
+                                    art = PosterArt.SHOW,
                                     isDefault = next == null && episode === season.episodes.first()
                                 ) { nav.push(VideoRoute.Play(episode.id)) }
                             }
                         }
                     }
+                }
+                item(key = "people") {
+                    Spacer(Modifier.height(22.dp))
+                    CastAndCrewRow(video, nav, show.cast, show.crew)
                 }
             }
             RestoreFocus(true)

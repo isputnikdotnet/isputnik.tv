@@ -2,6 +2,7 @@ package net.isputnik.tv.core
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
@@ -225,8 +227,15 @@ fun ProgressLine(fraction: Float, modifier: Modifier = Modifier, height: Dp = 4.
     }
 }
 
+/** The art's cream: it's dark in every theme, so the name on it is always light. */
+private val OnCoverArt = Color(0xFFF1F3EE)
+
+/** A box a little wider than 2:3 crops the poster art; lifting it keeps its glyph clear of the
+ *  name, as the website's `object-position: 50% 36%` does. */
+private val CoverAlignment = BiasAlignment(0f, -0.28f)
+
 /** A title's picture with its name under it. With no picture, or one that won't load, the name
- *  stands on the card: a blank card tells nobody anything. */
+ *  stands on the card — over its kind's [art] when it has one: a blank card tells nobody anything. */
 @Composable
 fun PosterCard(
     title: String,
@@ -237,6 +246,7 @@ fun PosterCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     progress: Float? = null,
+    art: PosterArt? = null,
     isDefault: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -249,7 +259,26 @@ fun PosterCard(
             modifier = Modifier.size(width, height).remembersFocus(focusKey, isDefault)
         ) {
             Box(Modifier.fillMaxSize().background(TvColors.Surface)) {
-                if (picture == null || failed) {
+                if ((picture == null || failed) && art != null) {
+                    val wide = width > height
+                    Image(
+                        painterResource(art.drawable(wide)),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        alignment = if (wide) Alignment.Center else CoverAlignment,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Text(
+                        title,
+                        color = OnCoverArt,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 17.sp,
+                        maxLines = if (wide) 2 else 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
+                    )
+                } else if (picture == null || failed) {
                     Text(
                         title,
                         color = TvColors.Muted,
