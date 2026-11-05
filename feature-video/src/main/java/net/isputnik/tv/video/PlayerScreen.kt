@@ -453,14 +453,18 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
         }
 
         if (layer == Layer.AUDIO_MENU) {
+            // A DVD rip names two tracks the same ("English · Stereo"): each row is keyed by its
+            // track, and a name said twice gets its track's number, so they can be told apart.
+            val labels = distinguish(info.audioTracks.mapIndexed { place, track -> audioLabel(track, place) }) { context.getString(R.string.player_track, it + 1) }
             ChoiceMenu(stringResource(R.string.player_audio), info.audioTracks.mapIndexed { place, track ->
-                Choice(audioLabel(track, place), track.index == audio) { chooseAudio(track) }
+                Choice("audio/${track.index}", labels[place], track.index == audio) { chooseAudio(track) }
             }, menuFirst)
         }
         if (layer == Layer.SUBTITLE_MENU) {
-            val off = Choice(stringResource(R.string.player_subtitles_off), subtitle == null) { chooseSubtitle(null) }
+            val labels = distinguish(info.subtitleTracks.mapIndexed { place, track -> subtitleLabel(track, place) }) { context.getString(R.string.player_track, it + 1) }
+            val off = Choice("off", stringResource(R.string.player_subtitles_off), subtitle == null) { chooseSubtitle(null) }
             ChoiceMenu(stringResource(R.string.player_subtitles), listOf(off) + info.subtitleTracks.mapIndexed { place, track ->
-                Choice(subtitleLabel(track, place), track.id == subtitle) { chooseSubtitle(track) }
+                Choice("subtitle/${track.id}", labels[place], track.id == subtitle) { chooseSubtitle(track) }
             }, menuFirst)
         }
 
@@ -492,7 +496,9 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
     }
 }
 
-private class Choice(val label: String, val selected: Boolean, val onClick: () -> Unit)
+/** One row of a menu. `key` names its track: two tracks may have the same label, and a list
+ *  with two rows of one key crashes the app (Compose's LazyColumn refuses it). */
+private class Choice(val key: String, val label: String, val selected: Boolean, val onClick: () -> Unit)
 
 /** A list down the right of the picture, focus on what's chosen now. */
 @Composable
@@ -504,7 +510,7 @@ private fun ChoiceMenu(title: String, choices: List<Choice>, focus: FocusRequest
         ) {
             Text(title, color = TvColors.Text, fontSize = 20.sp, modifier = Modifier.padding(bottom = 12.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(choices, key = { it.label }) { choice ->
+                items(choices, key = { it.key }) { choice ->
                     TvButton(
                         (if (choice.selected) "✓  " else "") + choice.label,
                         Modifier.fillMaxWidth().let { if (choice === focused) it.focusRequester(focus) else it },

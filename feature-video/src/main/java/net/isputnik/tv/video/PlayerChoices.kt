@@ -45,6 +45,13 @@ fun pickAudio(tracks: List<AudioTrack>, preference: String?): AudioTrack? =
 
 /** In the language chosen last time, full ones before forced and text before image; none once
  *  they were turned off; else the one the file marks as default. */
+/** Labels as a menu shows them: one said more than once gets its track's number after it
+ *  ("English · Track 1", "English · Track 8"), so two tracks never read the same. */
+fun distinguish(labels: List<String>, number: (Int) -> String): List<String> {
+    val counts = labels.groupingBy { it }.eachCount()
+    return labels.mapIndexed { place, label -> if ((counts[label] ?: 0) > 1) "$label · ${number(place)}" else label }
+}
+
 fun pickSubtitle(tracks: List<SubtitleTrack>, preference: String?): SubtitleTrack? {
     if (preference == SUBTITLES_OFF) return null
     if (preference != null) {

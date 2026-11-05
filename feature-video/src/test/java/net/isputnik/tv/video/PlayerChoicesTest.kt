@@ -77,4 +77,17 @@ class PlayerChoicesTest {
         assertEquals("5.1", channelsName(6))
         assertNull(channelsName(2))
     }
+
+    @Test fun `two tracks of one name get their numbers, so a menu never has two rows alike`() {
+        // Bad Boys (1995), a DVD rip: five sound tracks, two pairs named the same; English
+        // subtitles as a DVD picture track and as text. Two rows of one name crashed the menu.
+        val audio = listOf("English · Stereo", "English · Surround 5.1", "Spanish · Stereo", "English · Stereo", "English · Surround 5.1")
+        assertEquals(
+            listOf("English · Stereo · Track 1", "English · Surround 5.1 · Track 2", "Spanish · Stereo", "English · Stereo · Track 4", "English · Surround 5.1 · Track 5"),
+            distinguish(audio) { "Track ${it + 1}" }
+        )
+        val subtitles = listOf("English", "French", "Spanish", "English")
+        assertEquals(listOf("English · Track 1", "French", "Spanish", "English · Track 4"), distinguish(subtitles) { "Track ${it + 1}" })
+        assertEquals(listOf("English", "French"), distinguish(listOf("English", "French")) { "Track ${it + 1}" })
+    }
 }
