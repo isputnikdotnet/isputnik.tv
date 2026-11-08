@@ -17,6 +17,7 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.upstream.Loader
 import okhttp3.OkHttpClient
 
 private const val TAG = "TvPlayer"
@@ -106,13 +107,11 @@ class TvPlayer(context: Context, http: OkHttpClient, private val source: PlaySou
         override fun onIsPlayingChanged(isPlaying: Boolean) = events.onPlayingChanged(isPlaying)
     }
 
-    private fun classify(error: PlaybackException): PlayFailure = when {
-        (error.cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode in setOf(404, 410) -> PlayFailure.GONE
-        error.errorCode in PlaybackException.ERROR_CODE_IO_UNSPECIFIED..PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE -> PlayFailure.NETWORK
-        error.errorCode in PlaybackException.ERROR_CODE_DECODER_INIT_FAILED..PlaybackException.ERROR_CODE_DECODING_RESOURCES_RECLAIMED -> PlayFailure.DECODER
-        error.errorCode in PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED..PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_INIT_FAILED -> PlayFailure.DECODER
-        else -> PlayFailure.OTHER
-    }
+    private fun classify(error: PlaybackException): PlayFailure = Fallback.classify(
+        error.errorCode,
+        (error.cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode,
+        error.cause is Loader.UnexpectedLoaderException
+    )
 
     private fun apply(decision: Fallback.Decision) {
         if (finished) return

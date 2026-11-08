@@ -1,5 +1,7 @@
 package net.isputnik.tv.player
 
+import androidx.media3.common.PlaybackException
+
 /** Why the file as it is can't be played on this device. */
 enum class PlayFailure { DECODER, NETWORK, GONE, OTHER }
 
@@ -25,6 +27,25 @@ object Fallback {
         if ((!hasVideo || videoSupported) && (!hasAudio || audioSupported)) return Decision.KeepGoing
         return afterDecoderProblem(usingConverted, hasConverted)
     }
+
+    /**
+     * Names a player error. `httpStatus` is the server's answer when one came back;
+     * `readerCrashed` is true when Media3's own code threw while reading the file
+     * (Loader.UnexpectedLoaderException) — Media3 files that under "IO", but it is the
+     * file, not the network: an iTunes .m4v whose AC3 header holds an out-of-range
+     * bitrate code crashed Media3 1.11's Ac3Util, and the copy the server makes plays.
+     */
+    fun classify(errorCode: Int, httpStatus: Int?, readerCrashed: Boolean): PlayFailure = when {
+        httpStatus == 404 || httpStatus == 410 -> PlayFailure.GONE
+        readerCrashed -> PlayFailure.OTHER
+        errorCode in IO_ERRORS -> PlayFailure.NETWORK
+        errorCode in DECODER_ERRORS || errorCode in AUDIO_TRACK_ERRORS -> PlayFailure.DECODER
+        else -> PlayFailure.OTHER
+    }
+
+    private val IO_ERRORS = PlaybackException.ERROR_CODE_IO_UNSPECIFIED..PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE
+    private val DECODER_ERRORS = PlaybackException.ERROR_CODE_DECODER_INIT_FAILED..PlaybackException.ERROR_CODE_DECODING_RESOURCES_RECLAIMED
+    private val AUDIO_TRACK_ERRORS = PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED..PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_INIT_FAILED
 
     fun onError(failure: PlayFailure, usingConverted: Boolean, hasConverted: Boolean): Decision = when (failure) {
         PlayFailure.NETWORK, PlayFailure.GONE -> Decision.Stop(failure)

@@ -1,5 +1,6 @@
 package net.isputnik.tv.player
 
+import androidx.media3.common.PlaybackException
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -29,6 +30,22 @@ class FallbackTest {
     @Test fun `a lost connection isn't the file's fault`() {
         assertEquals(Fallback.Decision.Stop(PlayFailure.NETWORK), Fallback.onError(PlayFailure.NETWORK, false, true))
         assertEquals(Fallback.Decision.Stop(PlayFailure.GONE), Fallback.onError(PlayFailure.GONE, false, true))
+    }
+
+    @Test fun `errors are named by what went wrong`() {
+        assertEquals(PlayFailure.NETWORK, Fallback.classify(PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED, null, false))
+        assertEquals(PlayFailure.NETWORK, Fallback.classify(PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS, 502, false))
+        assertEquals(PlayFailure.GONE, Fallback.classify(PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS, 404, false))
+        assertEquals(PlayFailure.DECODER, Fallback.classify(PlaybackException.ERROR_CODE_DECODER_INIT_FAILED, null, false))
+        assertEquals(PlayFailure.DECODER, Fallback.classify(PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED, null, false))
+        assertEquals(PlayFailure.OTHER, Fallback.classify(PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED, null, false))
+    }
+
+    @Test fun `a crash reading the file is the file's fault, and the copy is tried`() {
+        // Media3 1.11 threw in Ac3Util on an iTunes .m4v and called it ERROR_CODE_IO_UNSPECIFIED.
+        val failure = Fallback.classify(PlaybackException.ERROR_CODE_IO_UNSPECIFIED, null, true)
+        assertEquals(PlayFailure.OTHER, failure)
+        assertEquals(Fallback.Decision.UseConverted, Fallback.onError(failure, false, true))
     }
 
     @Test fun `a decoder error part way through still falls back`() {
