@@ -130,29 +130,6 @@ private class WhoFeature(
     }
 }
 
-/** The page behind the Photos section, until photos come to the TV. */
-private data object PhotosRoute : Route {
-    override val key = "photos"
-}
-
-internal class PhotosFeature : Feature {
-    override val destinations = listOf(Destination(PhotosRoute, R.string.menu_photos, CoreR.drawable.ic_photo))
-    override fun owns(route: Route) = route == PhotosRoute
-
-    @Composable
-    override fun Content(route: Route, nav: Navigator) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 120.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Box(Modifier.size(72.dp).clip(CircleShape).background(TvColors.SurfaceRaised), contentAlignment = Alignment.Center) {
-                Icon(painterResource(CoreR.drawable.ic_photo), contentDescription = null, tint = TvColors.Accent, modifier = Modifier.size(36.dp))
-            }
-            Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.photos_soon_title), color = TvColors.Text, fontSize = 30.sp, fontFamily = FontFamily.Serif, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(10.dp))
-            Text(stringResource(R.string.photos_soon_body), color = TvColors.Muted, fontSize = 16.sp, textAlign = TextAlign.Center)
-        }
-    }
-}
-
 /** The menu over whichever section is on screen. Every visited screen keeps its scroll and the
  *  card it had focus on, so Back returns to exactly where you were. */
 @Composable

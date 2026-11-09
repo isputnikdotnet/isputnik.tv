@@ -53,6 +53,8 @@ import net.isputnik.tv.core.currentUser
 import net.isputnik.tv.core.profiles
 import net.isputnik.tv.core.wearProfile
 import net.isputnik.tv.games.GamesFeature
+import net.isputnik.tv.photos.PhotosApi
+import net.isputnik.tv.photos.PhotosFeature
 import net.isputnik.tv.video.VideoApi
 import net.isputnik.tv.video.VideoFeature
 import okhttp3.CookieJar
@@ -258,9 +260,15 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
                     // website decides its Games entry); video is there from the start.
                     var games by remember { mutableStateOf<Feature?>(null) }
                     LaunchedEffect(Unit) { if (GamesFeature.available(api)) games = GamesFeature(api, current.user.id) }
-                    // Movies and Shows, Photos (a page saying it's coming), then Games.
-                    val photos = remember { PhotosFeature() }
-                    val features = remember(games) { listOfNotNull<Feature>(video, photos, games) }
+                    // Photos joins it when an admin has put something on the TV for this
+                    // person and profile (home's docs/tv-photos-plan.md); none, no section.
+                    var photos by remember { mutableStateOf<Feature?>(null) }
+                    // Asked again on Refresh, so a pick added on the website shows without a restart;
+                    // never taken away while the app runs (the page itself says when it's empty).
+                    var photoChecks by remember { mutableIntStateOf(0) }
+                    LaunchedEffect(photoChecks) { if (photos == null && PhotosApi.available(api)) photos = PhotosFeature(api) }
+                    // Movies and Shows, Photos, then Games.
+                    val features = remember(photos, games) { listOfNotNull(video, photos, games) }
                     InLanguage(current.user.language) {
                         Shell(
                             features,
@@ -307,6 +315,7 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
                                         api.remember(user)
                                         stage = Stage.Signed(user, profiles)
                                     }
+                                    photoChecks++
                                     updates.checkNow()
                                 }
                             },

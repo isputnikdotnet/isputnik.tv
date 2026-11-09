@@ -47,9 +47,6 @@
     <string name="pin_ok">OK</string>
     <string name="pin_cancel">Stay here</string>
     <string name="profile_locked">Locked</string>
-    <string name="menu_photos">Photos</string>
-    <string name="photos_soon_title">Photos are on the way</string>
-    <string name="photos_soon_body">Albums, memories and slideshows from your library will play here, on the big screen. Until then, they are on the website and the phone app.</string>
     <string name="menu_refresh">Refresh</string>
     <string name="menu_exit">Exit app</string>
     <string name="menu_pin">PIN</string>

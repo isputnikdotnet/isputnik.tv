@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_photos">Фото</string>
+    <string name="photos_loading">Загружаем фото…</string>
+    <string name="photos_load_failed">Фото не загрузились.</string>
+    <string name="photos_retry">Попробовать снова</string>
+    <string name="photos_empty">Для вас на телевизоре пока ничего нет. Что здесь показывать, выбирает администратор на сайте, в разделе «Фото».</string>
+    <string name="photos_banner_slideshow">Слайд-шоу</string>
+    <string name="photos_banner_album">Альбом</string>
+    <string name="photos_play">Смотреть</string>
+    <string name="photos_row_slideshows">Слайд-шоу</string>
+    <string name="photos_row_albums">Альбомы</string>
+    <plurals name="photos_count">
+        <item quantity="one">%d фото</item>
+        <item quantity="few">%d фото</item>
+        <item quantity="many">%d фото</item>
+        <item quantity="other">%d фото</item>
+    </plurals>
+    <string name="photos_minutes">%d мин</string>
+    <string name="photos_decade">%d-е</string>
+    <string name="photos_paused">Пауза</string>
+    <string name="photos_keys">◀ ▶ листать · OK пауза · Назад выйти</string>
+    <string name="photos_nothing">Здесь нет ничего, что вам можно показать.</string>
+</resources>

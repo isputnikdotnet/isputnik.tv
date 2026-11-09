@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_photos">Photos</string>
+    <string name="photos_loading">Loading photos…</string>
+    <string name="photos_load_failed">Photos didn\'t load.</string>
+    <string name="photos_retry">Try again</string>
+    <string name="photos_empty">Nothing is on the TV for you yet. An admin chooses what shows here, on the website\'s Photos page.</string>
+    <string name="photos_banner_slideshow">Slideshow</string>
+    <string name="photos_banner_album">Album</string>
+    <string name="photos_play">Play</string>
+    <string name="photos_row_slideshows">Slideshows</string>
+    <string name="photos_row_albums">Albums</string>
+    <plurals name="photos_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <string name="photos_minutes">%d min</string>
+    <string name="photos_decade">%ds</string>
+    <string name="photos_paused">Paused</string>
+    <string name="photos_keys">◀ ▶ step · OK pause · Back leave</string>
+    <string name="photos_nothing">There\'s nothing here for you to see.</string>
+</resources>

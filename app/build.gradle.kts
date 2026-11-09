@@ -53,6 +53,7 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation(project(":feature-video"))
+    implementation(project(":feature-photos"))
     implementation(project(":feature-games"))
     implementation(libs.activity.compose)
     implementation(libs.androidx.core)
