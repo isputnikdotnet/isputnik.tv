@@ -39,6 +39,7 @@ import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import kotlinx.coroutines.launch
 import net.isputnik.tv.core.ApiClient
+import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.core.Empty
 import net.isputnik.tv.core.Feature
 import net.isputnik.tv.core.KeystoreTextStore
@@ -47,6 +48,7 @@ import net.isputnik.tv.core.TvButton
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.TvTheme
 import net.isputnik.tv.core.User
+import net.isputnik.tv.core.checkPin
 import net.isputnik.tv.core.currentUser
 import net.isputnik.tv.core.profiles
 import net.isputnik.tv.core.wearProfile
@@ -65,6 +67,8 @@ private sealed interface Stage {
     data class Signed(val user: User, val profiles: Profiles? = null) : Stage
     /** Which of this account's viewing profiles is watching (home's Profile › TV profiles). */
     data class ChooseProfile(val user: User, val profiles: Profiles) : Stage
+    /** The PIN pad over a locked profile; [submit] throws for a wrong PIN, [back] is Stay here. */
+    data class Pin(val purpose: PinPurpose, val submit: suspend (String) -> Unit, val back: Stage) : Stage
 }
 
 class MainActivity : ComponentActivity() {
@@ -83,7 +87,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Root(api: ApiClient) {
     // With several people on this TV it asks who's watching when opened; with one it just opens.
-    var stage by remember { mutableStateOf<Stage>(if (api.people.size > 1) Stage.Who else Stage.Checking) }
+    // It asks only once it knows the TV wasn't left in a locked profile (phase P2): from Kids,
+    // the picker would be a way to everyone else linked here.
+    var stage by remember { mutableStateOf<Stage>(Stage.Checking) }
+    var askPerson by remember { mutableStateOf(api.people.size > 1) }
     var attempt by remember { mutableIntStateOf(0) }
     // Which profile is watching is asked once when the app opens, and again after choosing
     // another person; never when the TV was left in a restricted profile (Kids stays Kids).
@@ -112,6 +119,12 @@ private fun Root(api: ApiClient) {
                 api.remember(user)
                 // An older home has no profiles, and a failure here only means none are offered.
                 val profiles = runCatching { api.profiles() }.getOrNull()
+                if (askPerson && api.people.size > 1 && profiles?.locked != true) {
+                    askPerson = false
+                    stage = Stage.Who
+                    return@LaunchedEffect
+                }
+                askPerson = false
                 val ask = askProfile && profiles != null && profiles.profiles.isNotEmpty() && profiles.worn?.restricted != true
                 askProfile = false
                 stage = if (ask) Stage.ChooseProfile(user, profiles!!) else Stage.Signed(user, profiles)
@@ -157,6 +170,7 @@ private fun Root(api: ApiClient) {
     val theme = when (val current = stage) {
         is Stage.Signed -> current.user.theme
         is Stage.ChooseProfile -> current.user.theme
+        is Stage.Pin -> (current.back as? Stage.Signed)?.user?.theme ?: api.activeTheme
         Stage.Who, Stage.Connect -> null
         else -> api.activeTheme
     }
@@ -215,8 +229,29 @@ private fun Root(api: ApiClient) {
                         }
                     }
                 }
+                is Stage.Pin -> InLanguage((current.back as? Stage.Signed)?.user?.language) {
+                    PinScreen(current.purpose, current.submit) { stage = current.back }
+                }
                 // A new profile is a new set of screens: its rows, its libraries, its history.
                 is Stage.Signed -> key(current.user.id, current.profiles?.current) {
+                    /** Every way out of a locked profile goes through the pad first; [action]
+                     *  gets the PIN typed (null when no lock), and throws if home refuses it. */
+                    fun guarded(purpose: PinPurpose, action: suspend (String?) -> Unit) {
+                        if (current.profiles?.locked == true) {
+                            stage = Stage.Pin(purpose, { pin -> action(pin) }, current)
+                        } else {
+                            scope.launch {
+                                try {
+                                    action(null)
+                                } catch (e: ApiException) {
+                                    // A PIN set on the website since this screen loaded: ask for it now.
+                                    if (e.reason == "pin_needed") stage = Stage.Pin(purpose, { pin -> action(pin) }, current)
+                                } catch (_: Exception) {
+                                    // Unreachable server: the next real request says so.
+                                }
+                            }
+                        }
+                    }
                     val video = remember { VideoFeature(VideoApi(api), current.user.id) }
                     // Games joins the menu once the server says this person may play (as the
                     // website decides its Games entry); video is there from the start.
@@ -230,21 +265,28 @@ private fun Root(api: ApiClient) {
                             people = api.people,
                             profiles = current.profiles,
                             onWear = { id ->
-                                scope.launch {
-                                    runCatching { api.wearProfile(id) }.onSuccess { stage = Stage.Signed(current.user, it) }
+                                guarded(PinPurpose.Profile) { pin -> stage = Stage.Signed(current.user, api.wearProfile(id, pin)) }
+                            },
+                            onSwitch = { person ->
+                                guarded(PinPurpose.Person) { pin ->
+                                    // Home can't see the other people on this TV; the check is the pad.
+                                    if (pin != null) api.checkPin(pin)
+                                    api.switchTo(person)
+                                    askProfile = true
+                                    check()
                                 }
                             },
-                            onSwitch = {
-                                api.switchTo(it)
-                                askProfile = true
-                                check()
-                            },
                             onAdd = {
-                                api.startLinking()
-                                stage = Stage.Link(current.user.id)
+                                guarded(PinPurpose.Add) { pin ->
+                                    if (pin != null) api.checkPin(pin)
+                                    api.startLinking()
+                                    stage = Stage.Link(current.user.id)
+                                }
                             },
                             onUnlink = {
-                                scope.launch {
+                                guarded(PinPurpose.Unlink) { pin ->
+                                    // Home refuses signing out of a locked profile: leave it first.
+                                    if (pin != null) api.wearProfile(null, pin)
                                     // Off the server first, so it's gone from Profile too; forgotten here either way.
                                     runCatching { api.send("POST", "/api/auth/logout", api.json.encodeToString(Empty.serializer(), Empty)) }
                                     api.clearSession()

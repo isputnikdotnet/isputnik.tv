@@ -34,4 +34,17 @@
     <string name="update_failed">Unable to download the update. Check the connection and try again.</string>
     <string name="update_open_settings">Continue</string>
     <string name="update_permission">This TV has to allow iSputnik TV to install its own updates, once. In the TV\'s settings, turn it on for iSputnik TV. On a Fire TV: My Fire TV, Developer options, Install unknown apps. Then come back and press this again.</string>
+    <string name="pin_title">Enter the PIN</string>
+    <string name="pin_why_profile">Leaving this profile needs the household PIN, set on the website\'s video page.</string>
+    <string name="pin_why_person">Choosing someone else needs the household PIN.</string>
+    <string name="pin_why_add">Adding a person needs the household PIN.</string>
+    <string name="pin_why_unlink">Unlinking this TV needs the household PIN.</string>
+    <string name="pin_wrong">That PIN isn\'t right.</string>
+    <string name="pin_tries_left">Tries left: %1$d.</string>
+    <string name="pin_locked">Too many wrong tries. The pad is locked for a while.</string>
+    <string name="pin_failed">The server couldn\'t check the PIN. Try again.</string>
+    <string name="pin_erase">⌫</string>
+    <string name="pin_ok">OK</string>
+    <string name="pin_cancel">Stay here</string>
+    <string name="profile_locked">Locked</string>
 </resources>

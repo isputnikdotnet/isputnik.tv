@@ -3,10 +3,11 @@ package net.isputnik.tv.core
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
 
-// Viewing profiles (home's docs/tv-profiles-plan.md, phase P1): views of one account for a
-// shared TV — Kids, Russian, Classic. Made in Profile on the web; this TV only wears them. The
-// one worn is kept on this TV's session by home, so the app opens in the profile it was left in,
-// and home narrows every answer to it (video libraries, sections) whatever this app asks.
+// Viewing profiles (home's docs/tv-profiles-plan.md): the household's ways of watching video —
+// Kids, Russian, Classic — set up by an admin on the website's video page. Every TV offers the
+// same ones; this TV only wears them. The one worn is kept on this TV's session by home, so the
+// app opens in the profile it was left in, and home narrows video to it (libraries, rows)
+// whatever this app asks. Games and everything else stay the account's.
 
 @Serializable
 data class ViewingProfile(
@@ -16,21 +17,20 @@ data class ViewingProfile(
     val restricted: Boolean = false
 )
 
-/** Which sections the TV should offer as the session is now (home's Sections). */
-@Serializable
-data class ProfileSections(val video: Boolean = true, val games: Boolean = true)
-
 /** GET /api/profiles */
 @Serializable
 data class Profiles(
     val profiles: List<ViewingProfile> = emptyList(),
     val current: String? = null,
-    val sections: ProfileSections = ProfileSections()
+    /** Leaving the profile worn now needs the household PIN. */
+    val locked: Boolean = false
 ) {
     val worn: ViewingProfile? get() = profiles.firstOrNull { it.id == current }
 }
 
-@Serializable private data class SwitchBody(val profileId: String?)
+@Serializable private data class SwitchBody(val profileId: String?, val pin: String? = null)
+@Serializable private data class PinBody(val pin: String)
+@Serializable private data class PinOk(val ok: Boolean = false)
 
 /** This account's profiles; null from a home too old to have them (or one that can't say). */
 suspend fun ApiClient.profiles(): Profiles? = try {
@@ -39,8 +39,16 @@ suspend fun ApiClient.profiles(): Profiles? = try {
     if (e.code == 404) null else throw e
 }
 
-/** Wear a profile on this TV, or (null) go back to the account itself. */
-suspend fun ApiClient.wearProfile(id: String?): Profiles = post("/api/profiles/switch", SwitchBody(id))
+/** Wear a profile on this TV, or (null) go back to the account itself. Leaving a locked
+ *  profile needs [pin]; a wrong one throws an [ApiException] whose reason is pin_wrong
+ *  (with triesLeft), pin_locked (429) or pin_needed. */
+suspend fun ApiClient.wearProfile(id: String?, pin: String? = null): Profiles = post("/api/profiles/switch", SwitchBody(id, pin))
+
+/** The PIN, checked before what the TV does on its own side of a locked profile: choosing
+ *  another person, linking someone, unlinking. Throws like [wearProfile] when it's wrong. */
+suspend fun ApiClient.checkPin(pin: String) {
+    post<PinOk, PinBody>("/api/profiles/pin/check", PinBody(pin))
+}
 
 /** A profile's colour, the same as on the web (styles/about.css). */
 fun profileColor(avatar: String): Color = when (avatar) {

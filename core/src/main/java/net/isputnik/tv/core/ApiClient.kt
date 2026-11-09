@@ -19,10 +19,11 @@ import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/** A refused request; `code` is the HTTP status, `reason` the server's machine-readable one. */
-class ApiException(val code: Int, message: String, val reason: String? = null) : IOException(message)
+/** A refused request; `code` is the HTTP status, `reason` the server's machine-readable one,
+ *  `triesLeft` what a wrong PIN leaves (home's viewing profiles). */
+class ApiException(val code: Int, message: String, val reason: String? = null, val triesLeft: Int? = null) : IOException(message)
 
-@Serializable private data class ErrorBody(val error: String? = null, val reason: String? = null)
+@Serializable private data class ErrorBody(val error: String? = null, val reason: String? = null, val triesLeft: Int? = null)
 
 @Serializable
 private data class StoredCookie(
@@ -194,7 +195,7 @@ class ApiClient(private val store: TextStore, userAgent: String) {
         val parsed = runCatching { json.decodeFromString<ErrorBody>(text) }.getOrNull()
         // Asking whether anyone is signed in isn't being signed out; everything else is.
         if (response.code == 401 && path != ME) _signedOut.tryEmit(Unit)
-        throw ApiException(response.code, parsed?.error ?: "HTTP ${response.code}", parsed?.reason)
+        throw ApiException(response.code, parsed?.error ?: "HTTP ${response.code}", parsed?.reason, parsed?.triesLeft)
     }
 
     suspend inline fun <reified T> get(path: String): T = json.decodeFromString(send("GET", path))

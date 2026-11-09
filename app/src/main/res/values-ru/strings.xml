@@ -34,4 +34,17 @@
     <string name="update_failed">Не удалось загрузить обновление. Проверьте подключение и попробуйте ещё раз.</string>
     <string name="update_open_settings">Продолжить</string>
     <string name="update_permission">Телевизор должен один раз разрешить iSputnik TV устанавливать обновления. Включите это для iSputnik TV в настройках телевизора. На Fire TV: My Fire TV, Developer options, Install unknown apps. Затем вернитесь и нажмите ещё раз.</string>
+    <string name="pin_title">Введите PIN-код</string>
+    <string name="pin_why_profile">Чтобы выйти из этого профиля, нужен общий PIN-код (он задаётся на странице видео на сайте).</string>
+    <string name="pin_why_person">Чтобы выбрать другого человека, нужен общий PIN-код.</string>
+    <string name="pin_why_add">Чтобы добавить человека, нужен общий PIN-код.</string>
+    <string name="pin_why_unlink">Чтобы отвязать телевизор, нужен общий PIN-код.</string>
+    <string name="pin_wrong">Неверный PIN-код.</string>
+    <string name="pin_tries_left">Осталось попыток: %1$d.</string>
+    <string name="pin_locked">Слишком много неверных попыток. Ввод заблокирован на время.</string>
+    <string name="pin_failed">Сервер не смог проверить PIN-код. Попробуйте ещё раз.</string>
+    <string name="pin_erase">⌫</string>
+    <string name="pin_ok">OK</string>
+    <string name="pin_cancel">Остаться</string>
+    <string name="profile_locked">Закрыто</string>
 </resources>

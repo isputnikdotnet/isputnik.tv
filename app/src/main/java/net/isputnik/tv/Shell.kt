@@ -89,6 +89,8 @@ private class AccountFeature(
     @Composable
     override fun Content(route: Route, nav: Navigator) {
         var confirming by remember { mutableStateOf(false) }
+        // In a locked profile every way out needs the PIN; the pad asks when one is chosen.
+        val lockedBadge = if (profiles?.locked == true) stringResource(R.string.profile_locked) else null
         Column(Modifier.fillMaxSize().padding(48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 26.sp)
             Spacer(Modifier.height(20.dp))
@@ -97,7 +99,7 @@ private class AccountFeature(
                     val mine = person.id == user.id
                     // This account itself is "selected" only while it wears no profile.
                     val here = mine && profiles?.current == null
-                    PersonTile(person.name, CoreR.drawable.ic_person, here, Modifier.remembersFocus("person/${person.id}", isDefault = here)) {
+                    PersonTile(person.name, CoreR.drawable.ic_person, here, Modifier.remembersFocus("person/${person.id}", isDefault = here), badge = lockedBadge) {
                         when {
                             here -> nav.back()
                             mine -> onWear(null)
@@ -108,11 +110,11 @@ private class AccountFeature(
                 // This account's profiles, after the people.
                 items(profiles?.profiles.orEmpty(), key = { "profile/${it.id}" }) { profile ->
                     val worn = profile.id == profiles?.current
-                    ProfileTile(profile.name, profile.avatar, worn, Modifier.remembersFocus("profile/${profile.id}", isDefault = worn)) {
+                    ProfileTile(profile.name, profile.avatar, worn, Modifier.remembersFocus("profile/${profile.id}", isDefault = worn), badge = if (worn) null else lockedBadge) {
                         if (worn) nav.back() else onWear(profile.id)
                     }
                 }
-                item(key = "add") { PersonTile(stringResource(R.string.who_add), R.drawable.ic_add, false, Modifier.remembersFocus("add"), onAdd) }
+                item(key = "add") { PersonTile(stringResource(R.string.who_add), R.drawable.ic_add, false, Modifier.remembersFocus("add"), badge = lockedBadge, onClick = onAdd) }
             }
             Spacer(Modifier.height(26.dp))
             // Armed only while focus stays here: moving away and back has to ask again.

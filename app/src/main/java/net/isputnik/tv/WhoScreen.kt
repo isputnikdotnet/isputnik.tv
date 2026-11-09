@@ -46,7 +46,7 @@ import net.isputnik.tv.core.R as CoreR
 
 /** One person on the row of who can watch. Also used for adding someone. */
 @Composable
-internal fun PersonTile(name: String, icon: Int, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun PersonTile(name: String, icon: Int, selected: Boolean, modifier: Modifier = Modifier, badge: String? = null, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Column(
         modifier
@@ -69,6 +69,7 @@ internal fun PersonTile(name: String, icon: Int, selected: Boolean, modifier: Mo
         }
         Spacer(Modifier.height(8.dp))
         Text(name, color = if (focused) TvColors.Accent else TvColors.Text, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        badge?.let { Text(it, color = TvColors.Muted, fontSize = 12.sp) }
     }
 }
 
@@ -92,7 +93,7 @@ internal fun WhoScreen(people: List<Person>, onChoose: (String) -> Unit, onAdd: 
 
 /** A viewing profile on the row (home's Profile › TV profiles): its colour and first letter. */
 @Composable
-internal fun ProfileTile(name: String, avatar: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun ProfileTile(name: String, avatar: String, selected: Boolean, modifier: Modifier = Modifier, badge: String? = null, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Column(
         modifier
@@ -115,6 +116,7 @@ internal fun ProfileTile(name: String, avatar: String, selected: Boolean, modifi
         }
         Spacer(Modifier.height(8.dp))
         Text(name, color = if (focused) TvColors.Accent else TvColors.Text, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        badge?.let { Text(it, color = TvColors.Muted, fontSize = 12.sp) }
     }
 }
 
