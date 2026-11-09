@@ -80,12 +80,12 @@ class MainActivity : ComponentActivity() {
         SingletonImageLoader.setSafe { context ->
             ImageLoader.Builder(context).components { add(OkHttpNetworkFetcherFactory(callFactory = { api.http })) }.build()
         }
-        setContent { Root(api) }
+        setContent { Root(api, onExit = { finish() }) }
     }
 }
 
 @Composable
-private fun Root(api: ApiClient) {
+private fun Root(api: ApiClient, onExit: () -> Unit) {
     // With several people on this TV it asks who's watching when opened; with one it just opens.
     // It asks only once it knows the TV wasn't left in a locked profile (phase P2): from Kids,
     // the picker would be a way to everyone else linked here.
@@ -258,13 +258,16 @@ private fun Root(api: ApiClient) {
                     // website decides its Games entry); video is there from the start.
                     var games by remember { mutableStateOf<Feature?>(null) }
                     LaunchedEffect(Unit) { if (GamesFeature.available(api)) games = GamesFeature(api, current.user.id) }
-                    val features = remember(games) { listOfNotNull<Feature>(video, games) }
+                    // Movies and Shows, Photos (a page saying it's coming), then Games.
+                    val photos = remember { PhotosFeature() }
+                    val features = remember(games) { listOfNotNull<Feature>(video, photos, games) }
                     InLanguage(current.user.language) {
                         Shell(
                             features,
                             current.user,
                             people = api.people,
                             profiles = current.profiles,
+                            searchRoute = video.searchRoute,
                             onWear = { id ->
                                 guarded(PinPurpose.Profile) { pin -> stage = Stage.Signed(current.user, api.wearProfile(id, pin)) }
                             },
@@ -294,6 +297,20 @@ private fun Root(api: ApiClient) {
                                     afterLeaving()
                                 }
                             },
+                            // The page redraws itself; this brings the name, theme and
+                            // profiles up to date and asks for an update at once.
+                            onRefresh = {
+                                scope.launch {
+                                    val user = runCatching { api.currentUser() }.getOrNull()
+                                    val profiles = runCatching { api.profiles() }.getOrNull() ?: current.profiles
+                                    if (user != null && user.id == current.user.id && stage == current) {
+                                        api.remember(user)
+                                        stage = Stage.Signed(user, profiles)
+                                    }
+                                    updates.checkNow()
+                                }
+                            },
+                            onExit = onExit,
                             updates = updates
                         )
                     }

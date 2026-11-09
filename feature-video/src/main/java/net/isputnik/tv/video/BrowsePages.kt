@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -44,6 +45,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.core.LocalFocusMemory
@@ -84,24 +88,43 @@ private fun timeLeft(minutes: Int?): String? = when {
     else -> stringResource(R.string.video_left_minutes, minutes)
 }
 
-/** The owner's banner: the title in wide letters, a line about it, how far you got, two
- *  buttons — words over the title's backdrop, which fills the screen behind the page. */
+/** The owner's banner (2026-11-09 mock-up): the poster on the left; beside it a small spaced
+ *  heading saying what this is, an accent line, the title large in a serif, a line about it,
+ *  how far you got, two buttons. Over the title's backdrop, which fills the screen behind. */
 @Composable
-private fun Banner(banner: BannerModel, nav: Navigator) {
-    Box(Modifier.fillMaxWidth().height(176.dp)) {
-        Column(Modifier.fillMaxSize().padding(vertical = 16.dp), verticalArrangement = Arrangement.Center) {
+private fun Banner(banner: BannerModel, nav: Navigator, video: VideoApi) {
+    Row(Modifier.fillMaxWidth().height(190.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(width = 120.dp, height = 170.dp).clip(RoundedCornerShape(8.dp)).background(TvColors.SurfaceRaised)) {
+            // The title's own poster, else the engine's art for it (as the cards draw it).
+            AsyncImage(model = banner.poster?.let(video::absolute) ?: video.posterOf(banner.id), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+        Spacer(Modifier.width(24.dp))
+        Column(Modifier.weight(1f)) {
             Text(
-                banner.title.uppercase(),
+                stringResource(
+                    when (banner.kind) {
+                        BannerKind.CONTINUE -> R.string.video_banner_continue
+                        BannerKind.SERIES -> R.string.video_banner_series
+                        BannerKind.FILM -> R.string.video_banner_film
+                    }
+                ).uppercase(),
+                color = TvColors.Muted,
+                fontSize = 11.sp,
+                letterSpacing = 4.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Box(Modifier.padding(top = 6.dp, bottom = 8.dp).size(width = 26.dp, height = 3.dp).clip(RoundedCornerShape(2.dp)).background(TvColors.Accent))
+            Text(
+                banner.title,
                 color = TvColors.Text,
-                fontSize = 30.sp,
-                letterSpacing = 6.sp,
-                fontWeight = FontWeight.Light,
+                fontSize = 34.sp,
+                fontFamily = FontFamily.Serif,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(0.72f)
+                modifier = Modifier.fillMaxWidth(0.8f)
             )
             banner.line?.let {
-                Text(it, color = TvColors.Text, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp).fillMaxWidth(0.62f))
+                Text(it, color = TvColors.Text, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp).fillMaxWidth(0.72f))
             }
             val details = listOfNotNull(episodeCode(banner.season, banner.episode), timeLeft(banner.minutesLeft)).joinToString(" · ")
             if (banner.fraction != null || details.isNotEmpty()) {
@@ -226,61 +249,6 @@ private fun rememberLoad(key: Any, load: suspend () -> Unit): Pair<Boolean, () -
 }
 
 @Composable
-internal fun HomePage(video: VideoApi, store: VideoStore, nav: Navigator) {
-    val (failed, retry) = rememberLoad(Unit) { store.refreshHome() }
-    val data = store.home
-    when {
-        store.available == false -> PageMessage(stringResource(R.string.video_unavailable), stringResource(R.string.video_retry), retry)
-        data == null && failed -> PageMessage(stringResource(R.string.video_load_failed), stringResource(R.string.video_retry), retry)
-        data == null -> PageMessage(stringResource(R.string.video_loading))
-        data.isEmpty -> PageMessage(stringResource(R.string.video_empty))
-        else -> {
-            ShowsBackdrop(data.banner?.backdrop?.let(video::absolute))
-            LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp)) {
-                data.banner?.let { banner ->
-                    item(key = "banner") {
-                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 18.dp)) { Banner(banner, nav) }
-                    }
-                }
-                // The rows this person's video page has, in its order; an empty one isn't drawn.
-                // With no banner, the first row drawn takes focus.
-                val drawn = data.rows.filter {
-                    when (it) {
-                        is HomeEntry.Resume -> data.resume.isNotEmpty()
-                        is HomeEntry.Titles -> it.items.isNotEmpty()
-                        is HomeEntry.Sets -> it.sets.isNotEmpty()
-                    }
-                }
-                drawn.forEachIndexed { index, entry ->
-                    val first = data.banner == null && index == 0
-                    item(key = "row/${entry.key}") {
-                        val title = nameOf(entry.name)
-                        when (entry) {
-                            is HomeEntry.Resume -> PosterRow(title, data.resume.map { item ->
-                                RowCard(
-                                    key = "resume/${item.id}",
-                                    title = item.show?.title ?: item.title,
-                                    picture = video.posterOf(item),
-                                    subtitle = if (item.show != null) episodeLabel(item) else null,
-                                    progress = if (item.resume) fractionOf(item.position, item.duration) else null,
-                                    art = if (item.show != null) PosterArt.SHOW else PosterArt.MOVIE,
-                                    onClick = { nav.push(VideoRoute.Play(item.id)) }
-                                )
-                            }, defaultFocus = first)
-                            is HomeEntry.Titles -> PosterRow(title, entry.items.map { listedCard(video, nav, it, entry.key) }, defaultFocus = first)
-                            is HomeEntry.Sets -> PosterRow(title, entry.sets.map { set ->
-                                RowCard("${entry.key}/${set.id}", set.name, set.poster?.let(video::absolute), pluralStringResource(R.plurals.video_set_films, set.films, set.films)) { nav.push(VideoRoute.SetPage(set.id)) }
-                            }, defaultFocus = first)
-                        }
-                    }
-                }
-            }
-            RestoreFocus(true)
-        }
-    }
-}
-
-@Composable
 private fun episodeLabel(item: ContinueItem): String {
     val code = episodeCode(item.season, item.episode)
     return if (code != null) "$code · ${item.title}" else item.title
@@ -324,52 +292,78 @@ private fun SortControl(current: Sort, onChange: (Sort) -> Unit) {
     }
 }
 
-/** Movies or Shows, as in the owner's picture: heading and sort, the banner, then everything. */
+/** Movies or Shows (2026-11-09): the banner, the video page's rows narrowed to this kind
+ *  (VideoStore.rowFor; a profile's own rows when one is worn), then every title of the kind,
+ *  A–Z or as sorted. The app opens on Movies. */
 @Composable
-internal fun LibraryPage(video: VideoApi, store: VideoStore, nav: Navigator, kind: Kind) {
-    var sortName by rememberSaveable(kind) { mutableStateOf(Sort.ADDED.name) }
+internal fun KindPage(video: VideoApi, store: VideoStore, nav: Navigator, kind: Kind) {
+    var sortName by rememberSaveable(kind) { mutableStateOf(Sort.TITLE.name) }
     val sort = Sort.valueOf(sortName)
-    val (failed, retry) = rememberLoad(kind to sort) { store.refreshLibrary(kind, sort) }
+    val (failed, retry) = rememberLoad(kind to sort) { store.refresh(kind, sort) }
     // The old order stays up until the new one arrives: if the page went away, so would focus.
-    val shown = remember(kind) { arrayOfNulls<LibraryData>(1) }
-    store.library(kind, sort)?.let { shown[0] = it }
+    val shown = remember(kind) { arrayOfNulls<KindData>(1) }
+    store.tab(kind, sort)?.let { shown[0] = it }
     val data = shown[0]
     when {
+        store.available == false -> PageMessage(stringResource(R.string.video_unavailable), stringResource(R.string.video_retry), retry)
         data == null && failed -> PageMessage(stringResource(R.string.video_load_failed), stringResource(R.string.video_retry), retry)
         data == null -> PageMessage(stringResource(R.string.video_loading))
-        data.items.isEmpty() -> PageMessage(stringResource(R.string.video_empty))
+        data.all.isEmpty() && data.rowsEmpty -> PageMessage(stringResource(R.string.video_empty))
         else -> {
             ShowsBackdrop(data.banner?.backdrop?.let(video::absolute))
-            LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(top = 2.dp, bottom = 28.dp)) {
-                item(key = "head") {
-                    Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(if (kind == Kind.SHOWS) R.string.video_heading_shows else R.string.video_heading_movies), color = TvColors.Text, fontSize = 26.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                            Text(stringResource(R.string.video_private_collection), color = TvColors.Muted, fontSize = 13.sp, maxLines = 1)
-                        }
-                        SortControl(sort) { sortName = it.name }
-                    }
-                }
+            LazyColumn(state = rememberLazyListState(), contentPadding = PaddingValues(top = 6.dp, bottom = 28.dp)) {
                 data.banner?.let { banner ->
                     item(key = "banner") {
-                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 16.dp)) { Banner(banner, nav) }
+                        Box(Modifier.padding(horizontal = PageGutter).padding(bottom = 14.dp)) { Banner(banner, nav, video) }
                     }
                 }
-                if (data.sets.isNotEmpty()) {
-                    item(key = "sets") {
-                        PosterRow(stringResource(R.string.video_sets), data.sets.map { set ->
-                            RowCard("set/${set.id}", set.name, set.poster?.let(video::absolute), pluralStringResource(R.plurals.video_set_films, set.films, set.films)) { nav.push(VideoRoute.SetPage(set.id)) }
-                        }, defaultFocus = data.banner == null)
+                // The rows in the page's order; an empty one isn't drawn. With no banner, the
+                // first row drawn takes focus.
+                val drawn = data.rows.filter {
+                    when (it) {
+                        is HomeEntry.Resume -> data.resume.isNotEmpty()
+                        is HomeEntry.Titles -> it.items.isNotEmpty()
+                        is HomeEntry.Sets -> it.sets.isNotEmpty()
                     }
                 }
-                item(key = "all") { SectionTitle(stringResource(if (kind == Kind.SHOWS) R.string.video_all_shows else R.string.video_all_movies), Modifier.padding(start = PageGutter)) }
-                val rows = data.items.chunked(GridColumns)
-                rows.forEachIndexed { index, row ->
-                    item(key = "row/${row.first().id}") {
-                        Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            row.forEach { title ->
-                                val card = summaryCard(video, nav, kind, title, "all")
-                                PosterCard(card.title, card.picture, card.key, PosterWidth, PosterHeight, subtitle = card.subtitle, art = card.art, isDefault = index == 0 && title === row.first() && data.banner == null && data.sets.isEmpty(), onClick = card.onClick)
+                drawn.forEachIndexed { index, entry ->
+                    val first = data.banner == null && index == 0
+                    item(key = "row/${entry.key}") {
+                        val title = nameOf(entry.name)
+                        when (entry) {
+                            is HomeEntry.Resume -> PosterRow(title, data.resume.map { item ->
+                                RowCard(
+                                    key = "resume/${item.id}",
+                                    title = item.show?.title ?: item.title,
+                                    picture = video.posterOf(item),
+                                    subtitle = if (item.show != null) episodeLabel(item) else null,
+                                    progress = if (item.resume) fractionOf(item.position, item.duration) else null,
+                                    art = if (item.show != null) PosterArt.SHOW else PosterArt.MOVIE,
+                                    onClick = { nav.push(VideoRoute.Play(item.id)) }
+                                )
+                            }, defaultFocus = first)
+                            is HomeEntry.Titles -> PosterRow(title, entry.items.map { listedCard(video, nav, it, entry.key) }, defaultFocus = first)
+                            is HomeEntry.Sets -> PosterRow(title, entry.sets.map { set ->
+                                RowCard("${entry.key}/${set.id}", set.name, set.poster?.let(video::absolute), pluralStringResource(R.plurals.video_set_films, set.films, set.films)) { nav.push(VideoRoute.SetPage(set.id)) }
+                            }, defaultFocus = first)
+                        }
+                    }
+                }
+                if (data.all.isNotEmpty()) {
+                    item(key = "all") {
+                        Row(Modifier.padding(horizontal = PageGutter).padding(top = 6.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            SectionTitle(stringResource(if (kind == Kind.SHOWS) R.string.video_all_shows else R.string.video_all_movies), Modifier.weight(1f))
+                            SortControl(sort) { sortName = it.name }
+                        }
+                    }
+                    val grid = data.all.chunked(GridColumns)
+                    grid.forEachIndexed { index, row ->
+                        item(key = "grid/${row.first().id}") {
+                            Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                row.forEach { title ->
+                                    val card = summaryCard(video, nav, kind, title, "all")
+                                    PosterCard(card.title, card.picture, card.key, PosterWidth, PosterHeight, subtitle = card.subtitle, art = card.art, isDefault = index == 0 && title === row.first() && data.banner == null && drawn.isEmpty(), onClick = card.onClick)
+                                }
                             }
                         }
                     }

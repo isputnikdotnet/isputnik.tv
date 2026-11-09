@@ -79,4 +79,7 @@
         <item quantity="one">%1$d film or show</item>
         <item quantity="other">%1$d films and shows</item>
     </plurals>
+    <string name="video_banner_continue">Continue</string>
+    <string name="video_banner_film">Film</string>
+    <string name="video_banner_series">Series</string>
 </resources>

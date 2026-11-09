@@ -44,10 +44,22 @@ import net.isputnik.tv.core.Profiles
 import net.isputnik.tv.core.RestoreFocus
 import net.isputnik.tv.core.Route
 import net.isputnik.tv.core.TopBar
-import net.isputnik.tv.core.TvButton
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.User
 import net.isputnik.tv.core.remembersFocus
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.tv.material3.Icon
+import net.isputnik.tv.core.Avatar
+import net.isputnik.tv.core.MenuDivider
+import net.isputnik.tv.core.MenuEntry
+import net.isputnik.tv.core.profileColor
 import java.util.Locale
 import net.isputnik.tv.core.R as CoreR
 
@@ -68,67 +80,76 @@ internal fun InLanguage(language: String?, content: @Composable () -> Unit) {
     )
 }
 
-private data object AccountRoute : Route {
-    override val key = "account"
+private data object WhoRoute : Route {
+    override val key = "who"
 }
 
-/** What's reached from the name at the top right: who's watching (people, and this account's
- *  viewing profiles), adding someone, leaving. */
-private class AccountFeature(
+/** Who's watching, behind the profile button in the top bar: this account itself, its
+ *  household's profiles, then the other people linked on this TV. Choosing the one already
+ *  watching just goes back. Adding a person and unlinking live in the settings menu. */
+private class WhoFeature(
     private val user: User,
     private val people: List<Person>,
     private val profiles: Profiles?,
     private val onWear: (String?) -> Unit,
-    private val onSwitch: (String) -> Unit,
-    private val onAdd: () -> Unit,
-    private val onUnlink: () -> Unit
+    private val onSwitch: (String) -> Unit
 ) : Feature {
     override val destinations = emptyList<Destination>()
-    override fun owns(route: Route) = route == AccountRoute
+    override fun owns(route: Route) = route == WhoRoute
 
     @Composable
     override fun Content(route: Route, nav: Navigator) {
-        var confirming by remember { mutableStateOf(false) }
         // In a locked profile every way out needs the PIN; the pad asks when one is chosen.
         val lockedBadge = if (profiles?.locked == true) stringResource(R.string.profile_locked) else null
         Column(Modifier.fillMaxSize().padding(48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 26.sp)
-            Spacer(Modifier.height(20.dp))
+            Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 32.sp, fontFamily = FontFamily.Serif)
+            Spacer(Modifier.height(28.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(people, key = { it.id }) { person ->
-                    val mine = person.id == user.id
-                    // This account itself is "selected" only while it wears no profile.
-                    val here = mine && profiles?.current == null
-                    PersonTile(person.name, CoreR.drawable.ic_person, here, Modifier.remembersFocus("person/${person.id}", isDefault = here), badge = lockedBadge) {
-                        when {
-                            here -> nav.back()
-                            mine -> onWear(null)
-                            else -> onSwitch(person.id)
+                val me = people.firstOrNull { it.id == user.id }
+                // This account first: everything it may see, no profile worn.
+                if (me != null) {
+                    item(key = "person/${me.id}") {
+                        val here = profiles?.current == null
+                        PersonTile(me.name, CoreR.drawable.ic_person, here, Modifier.remembersFocus("person/${me.id}", isDefault = here), badge = if (here) null else lockedBadge) {
+                            if (here) nav.back() else onWear(null)
                         }
                     }
                 }
-                // This account's profiles, after the people.
                 items(profiles?.profiles.orEmpty(), key = { "profile/${it.id}" }) { profile ->
                     val worn = profile.id == profiles?.current
                     ProfileTile(profile.name, profile.avatar, worn, Modifier.remembersFocus("profile/${profile.id}", isDefault = worn), badge = if (worn) null else lockedBadge) {
                         if (worn) nav.back() else onWear(profile.id)
                     }
                 }
-                item(key = "add") { PersonTile(stringResource(R.string.who_add), R.drawable.ic_add, false, Modifier.remembersFocus("add"), badge = lockedBadge, onClick = onAdd) }
+                items(people.filter { it.id != user.id }, key = { "person/${it.id}" }) { person ->
+                    PersonTile(person.name, CoreR.drawable.ic_person, false, Modifier.remembersFocus("person/${person.id}"), badge = lockedBadge) { onSwitch(person.id) }
+                }
             }
-            Spacer(Modifier.height(26.dp))
-            // Armed only while focus stays here: moving away and back has to ask again.
-            TvButton(stringResource(R.string.account_unlink, user.displayName), Modifier.remembersFocus("unlink").onFocusChanged { if (!it.hasFocus) confirming = false }) {
-                if (confirming) onUnlink() else confirming = true
-            }
-            if (confirming) {
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.account_unlink_confirm), color = TvColors.Muted, fontSize = 15.sp)
-            }
-            Spacer(Modifier.height(18.dp))
-            Text(stringResource(R.string.account_version, BuildConfig.VERSION_NAME), color = TvColors.Muted, fontSize = 13.sp)
         }
         RestoreFocus(true)
+    }
+}
+
+/** The page behind the Photos section, until photos come to the TV. */
+private data object PhotosRoute : Route {
+    override val key = "photos"
+}
+
+internal class PhotosFeature : Feature {
+    override val destinations = listOf(Destination(PhotosRoute, R.string.menu_photos, CoreR.drawable.ic_photo))
+    override fun owns(route: Route) = route == PhotosRoute
+
+    @Composable
+    override fun Content(route: Route, nav: Navigator) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 120.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Box(Modifier.size(72.dp).clip(CircleShape).background(TvColors.SurfaceRaised), contentAlignment = Alignment.Center) {
+                Icon(painterResource(CoreR.drawable.ic_photo), contentDescription = null, tint = TvColors.Accent, modifier = Modifier.size(36.dp))
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.photos_soon_title), color = TvColors.Text, fontSize = 30.sp, fontFamily = FontFamily.Serif, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.photos_soon_body), color = TvColors.Muted, fontSize = 16.sp, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -140,19 +161,26 @@ internal fun Shell(
     user: User,
     people: List<Person>,
     profiles: Profiles?,
+    searchRoute: Route?,
     onWear: (String?) -> Unit,
     onSwitch: (String) -> Unit,
     onAdd: () -> Unit,
     onUnlink: () -> Unit,
+    onRefresh: () -> Unit,
+    onExit: () -> Unit,
     updates: Updates
 ) {
-    val account = remember(user, people, profiles) { AccountFeature(user, people, profiles, onWear, onSwitch, onAdd, onUnlink) }
-    val all = remember(features, account, updates) { features + account + UpdateFeature(updates) }
+    val who = remember(user, people, profiles) { WhoFeature(user, people, profiles, onWear, onSwitch) }
+    val all = remember(features, who, updates) { features + who + UpdateFeature(updates) }
     val destinations = remember(all) { all.flatMap { it.destinations } }
     val holder = rememberSaveableStateHolder()
     val nav = remember { Navigator(destinations.first().route).apply { onLeft = { holder.removeState(it.key) } } }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
+    // Refresh in the settings menu: the page on screen is drawn again, and asks the server again.
+    var refreshes by remember { mutableIntStateOf(0) }
 
+    val worn = profiles?.worn
+    val locked = profiles?.locked == true
     val route = nav.current
     // The page's backdrop, under the menu as well: one picture behind the whole screen.
     val backdrop = remember { PageBackdrop() }
@@ -160,21 +188,62 @@ internal fun Shell(
         BackdropLayer(backdrop.url)
         Column(Modifier.fillMaxSize()) {
         if (destinations.any { it.route == route }) {
+            val shownName = worn?.name ?: user.displayName
             TopBar(
                 logo = R.drawable.ic_launcher_foreground,
                 appName = stringResource(R.string.app_name),
                 destinations = destinations,
                 current = route,
-                // The profile worn, else the account: the name the family picked on this TV.
-                personName = profiles?.worn?.name ?: user.displayName,
                 onSelect = { nav.select(it) },
-                onPerson = { nav.push(AccountRoute) },
-                notice = updates.available?.let { stringResource(R.string.update_notice) },
-                onNotice = { nav.push(UpdateRoute) }
+                // Updating is for a grown-up: not offered in a restricted profile.
+                updateLabel = updates.available?.takeIf { worn?.restricted != true }?.let { stringResource(R.string.action_update, it.version) },
+                onUpdate = { nav.push(UpdateRoute) },
+                searchLabel = stringResource(R.string.action_search),
+                onSearch = searchRoute?.let { search -> { nav.push(search) } },
+                settingsLabel = stringResource(R.string.action_settings),
+                menu = { close ->
+                    var confirming by remember { mutableStateOf(false) }
+                    MenuEntry(stringResource(R.string.menu_refresh), CoreR.drawable.ic_refresh) {
+                        close()
+                        refreshes++
+                        onRefresh()
+                    }
+                    MenuEntry(stringResource(R.string.who_add), CoreR.drawable.ic_person_add, locked = locked, lockedLabel = stringResource(R.string.menu_pin)) {
+                        close()
+                        onAdd()
+                    }
+                    // Armed only while focus stays on it: moving away and back has to ask again.
+                    MenuEntry(
+                        if (confirming) stringResource(R.string.menu_unlink_confirm) else stringResource(R.string.account_unlink, user.displayName),
+                        CoreR.drawable.ic_unlink,
+                        Modifier.onFocusChanged { if (!it.hasFocus) confirming = false },
+                        locked = locked,
+                        lockedLabel = stringResource(R.string.menu_pin)
+                    ) {
+                        if (confirming || locked) {
+                            close()
+                            onUnlink()
+                        } else confirming = true
+                    }
+                    MenuDivider()
+                    MenuEntry(stringResource(R.string.menu_exit), CoreR.drawable.ic_exit) {
+                        close()
+                        onExit()
+                    }
+                    Text(
+                        stringResource(R.string.menu_version, BuildConfig.VERSION_NAME, shownName),
+                        color = TvColors.Muted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 4.dp)
+                    )
+                },
+                profileLabel = stringResource(R.string.action_profile, shownName),
+                avatar = worn?.let { Avatar(it.name.trim().take(1).uppercase().ifEmpty { "?" }, profileColor(it.avatar)) },
+                onProfile = { nav.push(WhoRoute) }
             )
         }
         Box(Modifier.weight(1f)) {
-            key(route.key) {
+            key(route.key, refreshes) {
                 holder.SaveableStateProvider(route.key) {
                     val last = rememberSaveable { mutableStateOf<String?>(null) }
                     val memory = remember { FocusMemory(last) }

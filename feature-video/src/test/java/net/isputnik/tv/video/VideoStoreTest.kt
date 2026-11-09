@@ -71,10 +71,43 @@ class VideoStoreTest {
         assertEquals(RowName.Res(R.string.video_my_list), rowName(HomeRow("r", "mylist"), libraries))
     }
 
-    @Test fun `home is empty only when no row has anything in it`() {
+    @Test fun `a tab's rows are empty only when no row has anything in it`() {
         val film = ListedTitle("movies", "m", "Film")
-        assertTrue(HomeData(emptyList(), listOf(HomeEntry.Resume("c", RowName.Res(0)), HomeEntry.Titles("t", RowName.Res(0), emptyList())), null).isEmpty)
-        assertFalse(HomeData(emptyList(), listOf(HomeEntry.Titles("t", RowName.Res(0), listOf(film))), null).isEmpty)
-        assertFalse(HomeData(listOf(episode), emptyList(), null).isEmpty)
+        assertTrue(KindData(null, emptyList(), listOf(HomeEntry.Resume("c", RowName.Res(0)), HomeEntry.Titles("t", RowName.Res(0), emptyList())), emptyList()).rowsEmpty)
+        assertFalse(KindData(null, emptyList(), listOf(HomeEntry.Titles("t", RowName.Res(0), listOf(film))), emptyList()).rowsEmpty)
+        assertFalse(KindData(null, listOf(episode), emptyList(), emptyList()).rowsEmpty)
+    }
+
+    @Test fun `Movies and Shows each draw the rows of their kind, as the website's switch does`() {
+        val both = HomeRow("comedy", "titles", kind = "all", genres = listOf("Comedy"))
+        val films = HomeRow("new-movies", "titles", kind = "movies")
+        val series = HomeRow("new-shows", "titles", kind = "shows")
+        val sets = HomeRow("sets", "sets")
+        val resume = HomeRow("continue", "continue")
+        val mine = HomeRow("mine", "mylist")
+        assertEquals(both.copy(kind = "movies"), rowFor(both, Kind.MOVIES))
+        assertEquals(both.copy(kind = "shows"), rowFor(both, Kind.SHOWS))
+        assertEquals(films, rowFor(films, Kind.MOVIES))
+        assertNull(rowFor(films, Kind.SHOWS))
+        assertNull(rowFor(series, Kind.MOVIES))
+        assertEquals(sets, rowFor(sets, Kind.MOVIES))
+        assertNull(rowFor(sets, Kind.SHOWS))
+        assertEquals(resume, rowFor(resume, Kind.SHOWS))
+        assertEquals(mine, rowFor(mine, Kind.MOVIES))
+    }
+
+    @Test fun `a narrowed row keeps its own name, and a plain one says its kind`() {
+        val comedy = HomeRow("comedy", "titles", kind = "all", genres = listOf("Comedy"))
+        assertEquals(RowName.Joined("Comedy", "all"), nameFor(comedy, rowFor(comedy, Kind.MOVIES)!!, emptyMap()))
+        val recent = HomeRow("recent", "titles", kind = "all")
+        assertEquals(RowName.Res(R.string.video_recent_shows), nameFor(recent, rowFor(recent, Kind.SHOWS)!!, emptyMap()))
+    }
+
+    @Test fun `only the tab's kind of what's in progress or listed shows`() {
+        val film = ContinueItem(id = "m", type = "movie", title = "Film", position = 60.0, duration = 600.0)
+        assertEquals(listOf(episode), listOf(episode, film).ofKind(Kind.SHOWS))
+        assertEquals(listOf(film), listOf(episode, film).ofKind(Kind.MOVIES))
+        val listed = listOf(ListedTitle("movies", "m", "Film"), ListedTitle("shows", "s", "Show"))
+        assertEquals(listOf("s"), listed.ofKind(Kind.SHOWS).map { it.id })
     }
 }

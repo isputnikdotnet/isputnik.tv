@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,7 +81,7 @@ internal fun WhoScreen(people: List<Person>, onChoose: (String) -> Unit, onAdd: 
     val first = remember { FocusRequester() }
     LaunchedEffect(Unit) { first.requestWhenReady() }
     Centered {
-        Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 30.sp)
+        Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 32.sp, fontFamily = FontFamily.Serif)
         Spacer(Modifier.height(28.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
             items(people, key = { it.id }) { person ->
@@ -127,7 +128,7 @@ internal fun ProfileScreen(user: User, profiles: Profiles, onChoose: (String?) -
     val first = remember { FocusRequester() }
     LaunchedEffect(Unit) { first.requestWhenReady() }
     Centered {
-        Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 30.sp)
+        Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 32.sp, fontFamily = FontFamily.Serif)
         Spacer(Modifier.height(28.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
             item(key = "account") {

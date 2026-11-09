@@ -61,6 +61,16 @@ internal class Updates(private val context: Context, private val http: OkHttpCli
     suspend fun checkIfStale() {
         val now = System.currentTimeMillis()
         if (available != null || !Releases.isStale(checkedAt, now)) return
+        ask(now)
+    }
+
+    /** Refresh in the settings menu: ask now, however recently the app asked. */
+    suspend fun checkNow() {
+        if (available != null) return
+        ask(System.currentTimeMillis())
+    }
+
+    private suspend fun ask(now: Long) {
         checkedAt = now
         folder.deleteRecursively()
         available = runCatching { Releases.check(http, BuildConfig.RELEASES_URL, BuildConfig.VERSION_NAME) }.getOrNull()

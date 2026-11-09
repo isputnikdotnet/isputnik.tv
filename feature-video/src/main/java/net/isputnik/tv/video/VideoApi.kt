@@ -209,6 +209,8 @@ class VideoApi(val api: ApiClient) {
 
     /** A show's poster stands in for its episodes, which have none of their own in this list. */
     fun posterOf(item: ContinueItem): String = api.absolute("$BASE/art/${item.show?.id ?: item.id}/poster")
+    /** A film's or show's poster by its id, as the engine serves its art. */
+    fun posterOf(id: String): String = api.absolute("$BASE/art/$id/poster")
     fun absolute(path: String): String = api.absolute(path)
 
     companion object {

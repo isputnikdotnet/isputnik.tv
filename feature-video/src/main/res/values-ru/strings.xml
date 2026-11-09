@@ -83,4 +83,7 @@
         <item quantity="many">%1$d фильмов или сериалов</item>
         <item quantity="other">%1$d фильма или сериала</item>
     </plurals>
+    <string name="video_banner_continue">Продолжить</string>
+    <string name="video_banner_film">Фильм</string>
+    <string name="video_banner_series">Сериал</string>
 </resources>

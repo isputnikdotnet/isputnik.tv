@@ -47,4 +47,16 @@
     <string name="pin_ok">OK</string>
     <string name="pin_cancel">Остаться</string>
     <string name="profile_locked">Закрыто</string>
+    <string name="menu_photos">Фото</string>
+    <string name="photos_soon_title">Фото скоро появятся</string>
+    <string name="photos_soon_body">Альбомы, воспоминания и слайд-шоу из вашей библиотеки будут показываться здесь, на большом экране. А пока они на сайте и в приложении на телефоне.</string>
+    <string name="menu_refresh">Обновить</string>
+    <string name="menu_exit">Выйти из приложения</string>
+    <string name="menu_pin">PIN</string>
+    <string name="menu_unlink_confirm">Нажмите ещё раз, чтобы отвязать</string>
+    <string name="menu_version">iSputnik TV %1$s · %2$s</string>
+    <string name="action_update">Обновить до %1$s</string>
+    <string name="action_search">Поиск</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_profile">Кто смотрит: %1$s</string>
 </resources>
