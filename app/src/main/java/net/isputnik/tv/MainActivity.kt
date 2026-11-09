@@ -99,7 +99,8 @@ private fun Root(api: ApiClient) {
     val context = LocalContext.current
     // Through the app's client for its user agent, but none of the session goes to GitHub.
     val updates = remember { Updates(context, api.http.newBuilder().cookieJar(CookieJar.NO_COOKIES).build()) }
-    LaunchedEffect(Unit) { updates.check() }
+    // Each time the app comes to the screen, not only when it starts (Updates.checkIfStale).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { scope.launch { updates.checkIfStale() } }
 
     /** With this person gone: whoever's left, or a new code. */
     fun afterLeaving() {

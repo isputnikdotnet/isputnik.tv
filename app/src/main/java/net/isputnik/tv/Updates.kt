@@ -45,15 +45,23 @@ internal data object UpdateRoute : Route {
     override val key = "update"
 }
 
-/** Asks once each time the app opens. Failing to ask says nothing: a TV without internet, or
- *  with GitHub down, has no business hearing about it. */
+/** Asks when the app comes to the screen, at most every [Releases.RECHECK_MS]: a TV keeps the
+ *  app open for days, so "when it starts" alone could mean never (TV 0.9.0 sat unnoticed that
+ *  way). Failing to ask says nothing: a TV without internet, or with GitHub down, has no
+ *  business hearing about it. */
 internal class Updates(private val context: Context, private val http: OkHttpClient) {
     var available by mutableStateOf<AvailableUpdate?>(null)
         private set
 
     private val folder get() = File(context.cacheDir, "updates")
+    private var checkedAt: Long? = null
 
-    suspend fun check() {
+    /** Asks again only when the last answer has gone stale, and never once an update is on
+     *  offer: its download may be under way in [folder]. */
+    suspend fun checkIfStale() {
+        val now = System.currentTimeMillis()
+        if (available != null || !Releases.isStale(checkedAt, now)) return
+        checkedAt = now
         folder.deleteRecursively()
         available = runCatching { Releases.check(http, BuildConfig.RELEASES_URL, BuildConfig.VERSION_NAME) }.getOrNull()
     }

@@ -22,6 +22,15 @@ data class AvailableUpdate(val version: String, val url: String)
 object Releases {
     private val json = Json { ignoreUnknownKeys = true }
 
+    /** How long an answer stands. A TV keeps an app open for days, coming back to it from the
+     *  home screen rather than starting it, so the app asks again on its way back to the screen
+     *  once this has passed. Often enough that a release is seen the same evening; rarely enough
+     *  to stay far inside GitHub's 60 unsigned requests an hour. */
+    const val RECHECK_MS = 3L * 60 * 60 * 1000
+
+    /** Whether to ask again: never asked, or the last answer is older than [RECHECK_MS]. */
+    fun isStale(checkedAt: Long?, now: Long): Boolean = checkedAt == null || now - checkedAt >= RECHECK_MS
+
     /** False for anything that isn't a plain version, so an odd tag never offers an update. */
     fun isNewer(latest: String, current: String): Boolean {
         val a = parts(latest) ?: return false

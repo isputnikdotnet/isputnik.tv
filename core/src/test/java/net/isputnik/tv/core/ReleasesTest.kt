@@ -15,6 +15,15 @@ import java.io.IOException
 import java.nio.file.Files
 
 class ReleasesTest {
+    @Test
+    fun asksAgainOnlyOnceTheAnswerIsStale() {
+        val now = 10L * Releases.RECHECK_MS
+        assertTrue(Releases.isStale(null, now))
+        assertFalse(Releases.isStale(now - 1000, now))
+        assertFalse(Releases.isStale(now - Releases.RECHECK_MS + 1, now))
+        assertTrue(Releases.isStale(now - Releases.RECHECK_MS, now))
+    }
+
     private val server = MockWebServer()
     private val http = OkHttpClient()
 
