@@ -19,4 +19,9 @@
     <string name="photos_paused">Paused</string>
     <string name="photos_keys">◀ ▶ step · OK pause · Back leave</string>
     <string name="photos_nothing">There\'s nothing here for you to see.</string>
+    <plurals name="photos_more_people">
+        <item quantity="one">and %d more</item>
+        <item quantity="other">and %d more</item>
+    </plurals>
+    <string name="photos_movie_keys">◀ ▶ 10 s · OK pause · Back leave</string>
 </resources>

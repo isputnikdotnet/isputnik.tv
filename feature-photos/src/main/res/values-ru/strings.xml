@@ -21,4 +21,11 @@
     <string name="photos_paused">Пауза</string>
     <string name="photos_keys">◀ ▶ листать · OK пауза · Назад выйти</string>
     <string name="photos_nothing">Здесь нет ничего, что вам можно показать.</string>
+    <plurals name="photos_more_people">
+        <item quantity="one">и ещё %d</item>
+        <item quantity="few">и ещё %d</item>
+        <item quantity="many">и ещё %d</item>
+        <item quantity="other">и ещё %d</item>
+    </plurals>
+    <string name="photos_movie_keys">◀ ▶ 10 с · OK пауза · Назад выйти</string>
 </resources>

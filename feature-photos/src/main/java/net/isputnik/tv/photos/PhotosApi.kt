@@ -2,6 +2,7 @@ package net.isputnik.tv.photos
 
 import kotlinx.serialization.Serializable
 import net.isputnik.tv.core.ApiClient
+import okhttp3.OkHttpClient
 
 // What home answers about photos on the TV (home's docs/tv-photos-plan.md). Only what the app
 // uses: anything else in an answer is ignored, so a newer home can't break an older TV.
@@ -38,16 +39,45 @@ data class PhotoAsset(
     val placeText: String? = null,
     val previewUrl: String? = null,
     val coverUrl: String? = null,
-    val dwellSeconds: Double? = null
+    val dwellSeconds: Double? = null,
+    /** A video: home names its playable copy (the converted one where there is one), and
+     *  says false when nothing here can play it. */
+    val playbackUrl: String? = null,
+    val playable: Boolean? = null,
+    val durationSeconds: Double? = null
 ) {
     /** What the viewer draws: the large copy, else the small one. */
     val picture: String? get() = previewUrl ?: coverUrl
 }
 
+/** Someone in a photo, as the website's lightbox names them. */
+@Serializable data class PersonName(val name: String = "")
+
+/** What the caption adds from one photo's full read: who is in it, and its place by name. */
+@Serializable data class AssetDetail(val people: List<PersonName> = emptyList(), val placeLabel: PlaceLabel? = null)
+
+/** A photo's place, named from its coordinates in the viewer's language. */
+@Serializable data class PlaceLabel(val place: String? = null, val region: String? = null, val country: String? = null) {
+    /** "Milan, Italy": the place and its country, whichever are known. */
+    val text: String? get() = listOfNotNull(place, country).map { it.trim() }.filter { it.isNotEmpty() }.distinct().joinToString(", ").ifEmpty { null }
+}
+@Serializable private data class DetailAnswer(val asset: AssetDetail = AssetDetail())
+
 @Serializable data class AssetPage(val assets: List<PhotoAsset> = emptyList(), val total: Int = 0)
 
 class PhotosApi(private val api: ApiClient) {
     fun absolute(path: String): String = if (path.startsWith("http")) path else api.absolute(path)
+
+    /** The session's client, for the players: they carry the cookies like everything else. */
+    val http: OkHttpClient get() = api.http
+
+    /** A slideshow's rendered movie. Home lists `movie` only when this viewer sees every photo in it. */
+    fun movieUrl(item: TvPhotoItem): String = absolute("$BASE/slideshows/${item.id}/movie")
+
+    fun musicUrl(trackId: String): String = absolute("$BASE/music/${trackId}/stream")
+
+    /** Who is in a photo and where, for the caption; home applies the same people rules as on the website. */
+    suspend fun detail(id: String): AssetDetail = api.get<DetailAnswer>("$BASE/assets/$id").asset
 
     /** The TV's list for whoever is watching; empty when there's nothing, or no Photos at all. */
     suspend fun list(): List<TvPhotoItem> = api.get<TvPhotoList>("$BASE/tv").items

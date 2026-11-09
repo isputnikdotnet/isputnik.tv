@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,6 +53,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import androidx.tv.material3.Text
 import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
@@ -134,28 +141,86 @@ private fun Show(photos: PhotosApi, item: TvPhotoItem, assets: List<PhotoAsset>,
         captionOn = false
     }
 
+    val context = LocalContext.current
+    val current = assets.getOrNull(index)
+    /** A video playing in place: the slide it's on, once it has ended or failed. */
+    var videoDone by remember { mutableIntStateOf(-1) }
+    var videoFailed by remember { mutableIntStateOf(-1) }
+    val videoHere = playsInPlace(current) && videoFailed != index
+
     fun step(by: Int) {
         stepFrom(index, by, assets.size, total)?.let {
             direction = if (by < 0) -1 else 1
+            // Coming back to a video plays it again.
+            videoDone = -1
+            videoFailed = -1
             index = it
         }
     }
 
-    // The clock: once this slide is on screen, its time; then on, as soon as the next is here.
-    LaunchedEffect(index, paused, drawn == index) {
+    // The clock: once this slide is on screen, its time (a video: until it ends); then on,
+    // as soon as the next is here.
+    LaunchedEffect(index, paused, drawn == index, videoHere) {
         if (paused || drawn != index) return@LaunchedEffect
-        delay((secondsFor(item, assets.getOrNull(index)) * 1000).toLong())
+        if (videoHere) snapshotFlow { videoDone == index || videoFailed == index }.first { it }
+        if (!videoHere || videoFailed == index) delay((secondsFor(item, assets.getOrNull(index)) * 1000).toLong())
         val next = snapshotFlow { stepFrom(index, 1, assets.size, total) }.filterNotNull().first()
         direction = 1
+        videoDone = -1
+        videoFailed = -1
         index = next
     }
 
     // The next picture, fetched ahead into the image cache.
-    val context = LocalContext.current
     LaunchedEffect(index, assets.size, total) {
         val next = stepFrom(index, 1, assets.size, total) ?: return@LaunchedEffect
         assets[next].picture?.let { SingletonImageLoader.get(context).enqueue(ImageRequest.Builder(context).data(photos.absolute(it)).build()) }
     }
+
+    // Who is in this photo and the next, for the caption (home's people rules apply).
+    val details = remember(item) { mutableStateMapOf<String, AssetDetail>() }
+    LaunchedEffect(index, assets.size) {
+        listOfNotNull(assets.getOrNull(index), stepFrom(index, 1, assets.size, total)?.let { assets.getOrNull(it) })
+            .filter { it.id !in details }
+            .forEach { asset -> runCatching { photos.detail(asset.id) }.onSuccess { details[asset.id] = it } }
+    }
+
+    // A slideshow's music, round and round under the show; quiet while a video speaks.
+    val music = remember(item) { item.musicTrackId?.takeIf { item.isSlideshow }?.let { photoPlayer(context, photos.http) } }
+    DisposableEffect(music) {
+        music?.apply {
+            repeatMode = Player.REPEAT_MODE_ALL
+            setMediaItem(MediaItem.fromUri(photos.musicUrl(item.musicTrackId!!)))
+            prepare()
+        }
+        onDispose { music?.release() }
+    }
+    LaunchedEffect(music, paused, videoHere) { music?.playWhenReady = !paused && !videoHere }
+
+    // One player for the videos in the show, used by whichever is on screen.
+    val clips = remember(item) { photoPlayer(context, photos.http) }
+    DisposableEffect(clips) {
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_ENDED) videoDone = index
+            }
+            override fun onPlayerError(error: PlaybackException) {
+                videoFailed = index
+            }
+        }
+        clips.addListener(listener)
+        onDispose {
+            clips.removeListener(listener)
+            clips.release()
+        }
+    }
+    LaunchedEffect(index, videoHere) {
+        if (videoHere && current != null) {
+            clips.setMediaItem(MediaItem.fromUri(photos.absolute(current.playbackUrl!!)))
+            clips.prepare()
+        } else clips.stop()
+    }
+    LaunchedEffect(paused, index, videoHere) { clips.playWhenReady = videoHere && !paused }
 
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestWhenReady() }
@@ -188,7 +253,8 @@ private fun Show(photos: PhotosApi, item: TvPhotoItem, assets: List<PhotoAsset>,
             label = "slide",
             modifier = Modifier.fillMaxSize()
         ) { shownIndex ->
-            val picture = assets.getOrNull(shownIndex)?.picture
+            val asset = assets.getOrNull(shownIndex)
+            val picture = asset?.picture
             Box(Modifier.fillMaxSize().background(Color.Black)) {
                 if (picture == null) {
                     LaunchedEffect(shownIndex) { drawn = shownIndex }
@@ -202,23 +268,42 @@ private fun Show(photos: PhotosApi, item: TvPhotoItem, assets: List<PhotoAsset>,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+                // The video over its own still, which shows until the first frame does.
+                if (shownIndex == index && playsInPlace(asset) && videoFailed != shownIndex) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { ctx ->
+                            PlayerView(ctx).apply {
+                                useController = false
+                                isFocusable = false
+                                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                                player = clips
+                            }
+                        },
+                        onRelease = { it.player = null }
+                    )
+                }
             }
         }
 
         AnimatedVisibility(captionOn || paused, enter = fadeIn(tween(250)), exit = fadeOut(tween(600)), modifier = Modifier.align(Alignment.BottomStart)) {
-            Caption(item, assets.getOrNull(index), index, total, paused)
+            Caption(item, current, current?.let { details[it.id] }, index, total, paused)
         }
     }
 }
 
 @Composable
-private fun Caption(item: TvPhotoItem, asset: PhotoAsset?, index: Int, total: Int, paused: Boolean) {
+private fun Caption(item: TvPhotoItem, asset: PhotoAsset?, detail: AssetDetail?, index: Int, total: Int, paused: Boolean) {
     val locale = LocalConfiguration.current.locales[0]
     val decade = stringResource(R.string.photos_decade)
+    val resources = LocalContext.current.resources
+    val place = asset?.placeText?.takeIf { it.isNotBlank() } ?: detail?.placeLabel?.text
     val line = listOfNotNull(
         asset?.let { takenText(it.takenAt, it.takenPrecision, locale) { year -> decade.format(year) } },
-        asset?.placeText?.takeIf { it.isNotBlank() }
+        place
     ).joinToString(" · ")
+    val people = detail?.let { found -> peopleText(found.people.map { it.name }) { rest -> resources.getQuantityString(R.plurals.photos_more_people, rest, rest) } }
     Box(
         Modifier.fillMaxWidth()
             .background(Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f)))
@@ -229,6 +314,9 @@ private fun Caption(item: TvPhotoItem, asset: PhotoAsset?, index: Int, total: In
                 Text(item.name.uppercase(), color = CaptionMuted, fontSize = 11.sp, letterSpacing = 3.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (line.isNotEmpty()) {
                     Text(line, color = CaptionText, fontSize = 24.sp, fontFamily = FontFamily.Serif, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+                }
+                if (people != null) {
+                    Text(people, color = CaptionText, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                 }
                 Text(stringResource(R.string.photos_keys), color = CaptionMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
             }

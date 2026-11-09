@@ -69,3 +69,18 @@ fun takenText(takenAt: String?, precision: String?, locale: Locale, decade: (Int
         else -> DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale).format(date)
     }
 }
+
+/** A video that plays where it stands in the show (P3); one home can't play stays a still. */
+fun playsInPlace(asset: PhotoAsset?): Boolean =
+    asset != null && asset.kind == "video" && asset.playbackUrl != null && asset.playable != false
+
+/** At most this many names in a caption; the rest are counted. */
+const val CAPTION_NAMES = 4
+
+/** "Anna, Boris, Vera" — or with more than [CAPTION_NAMES], the first ones and `more` for the rest. */
+fun peopleText(names: List<String>, more: (Int) -> String): String? {
+    val shown = names.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+    if (shown.isEmpty()) return null
+    if (shown.size <= CAPTION_NAMES) return shown.joinToString(", ")
+    return shown.take(CAPTION_NAMES).joinToString(", ") + " " + more(shown.size - CAPTION_NAMES)
+}

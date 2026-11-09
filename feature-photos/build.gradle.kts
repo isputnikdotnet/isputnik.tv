@@ -15,5 +15,9 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.activity.compose)
     implementation(libs.coil.compose)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+    implementation(libs.media3.okhttp)
+    implementation(libs.okhttp)
     testImplementation(libs.junit)
 }

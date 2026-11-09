@@ -72,7 +72,13 @@ class PhotosFeature(api: ApiClient) : Feature {
     override fun Content(route: Route, nav: Navigator) {
         when (val page = route as PhotosRoute) {
             PhotosRoute.Home -> PhotosPage(photos, nav)
-            is PhotosRoute.View -> PhotoViewer(photos, page.item)
+            is PhotosRoute.View -> {
+                // A slideshow with a movie this viewer may watch plays it; otherwise, or if
+                // it won't play, the show runs live.
+                var live by remember(page) { mutableStateOf(!page.item.movie) }
+                if (live) PhotoViewer(photos, page.item)
+                else SlideshowMovie(photos, page.item, onEnded = { nav.back() }, onFailed = { live = true })
+            }
         }
     }
 }
