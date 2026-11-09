@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import net.isputnik.tv.core.Person
+import net.isputnik.tv.core.Profiles
+import net.isputnik.tv.core.User
+import net.isputnik.tv.core.profileColor
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.requestWhenReady
 import net.isputnik.tv.core.R as CoreR
@@ -83,6 +86,55 @@ internal fun WhoScreen(people: List<Person>, onChoose: (String) -> Unit, onAdd: 
                 PersonTile(person.name, CoreR.drawable.ic_person, false, if (person === people.first()) Modifier.focusRequester(first) else Modifier) { onChoose(person.id) }
             }
             item(key = "add") { PersonTile(stringResource(R.string.who_add), R.drawable.ic_add, false, onClick = onAdd) }
+        }
+    }
+}
+
+/** A viewing profile on the row (home's Profile › TV profiles): its colour and first letter. */
+@Composable
+internal fun ProfileTile(name: String, avatar: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    Column(
+        modifier
+            .width(120.dp)
+            .onFocusChanged { focused = it.hasFocus }
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            Modifier
+                .size(84.dp)
+                .clip(CircleShape)
+                .background(profileColor(avatar))
+                .border(3.dp, if (focused) TvColors.Accent else if (selected) TvColors.Muted else Color.Transparent, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(name.trim().take(1).uppercase().ifEmpty { "?" }, color = Color.White, fontSize = 38.sp)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(name, color = if (focused) TvColors.Accent else TvColors.Text, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Who's watching, among one account's viewing profiles: the account itself first, then each
+ *  profile. Asked when the app opens (unless it was left in a restricted profile). */
+@Composable
+internal fun ProfileScreen(user: User, profiles: Profiles, onChoose: (String?) -> Unit) {
+    val first = remember { FocusRequester() }
+    LaunchedEffect(Unit) { first.requestWhenReady() }
+    Centered {
+        Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 30.sp)
+        Spacer(Modifier.height(28.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
+            item(key = "account") {
+                PersonTile(user.displayName, CoreR.drawable.ic_person, profiles.current == null, if (profiles.current == null) Modifier.focusRequester(first) else Modifier) { onChoose(null) }
+            }
+            items(profiles.profiles, key = { it.id }) { profile ->
+                val worn = profile.id == profiles.current
+                ProfileTile(profile.name, profile.avatar, worn, if (worn) Modifier.focusRequester(first) else Modifier) { onChoose(profile.id) }
+            }
         }
     }
 }

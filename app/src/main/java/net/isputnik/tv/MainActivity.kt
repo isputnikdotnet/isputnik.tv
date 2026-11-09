@@ -42,11 +42,14 @@ import net.isputnik.tv.core.ApiClient
 import net.isputnik.tv.core.Empty
 import net.isputnik.tv.core.Feature
 import net.isputnik.tv.core.KeystoreTextStore
+import net.isputnik.tv.core.Profiles
 import net.isputnik.tv.core.TvButton
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.TvTheme
 import net.isputnik.tv.core.User
 import net.isputnik.tv.core.currentUser
+import net.isputnik.tv.core.profiles
+import net.isputnik.tv.core.wearProfile
 import net.isputnik.tv.games.GamesFeature
 import net.isputnik.tv.video.VideoApi
 import net.isputnik.tv.video.VideoFeature
@@ -58,7 +61,10 @@ private sealed interface Stage {
     data object Connect : Stage
     data object Who : Stage
     data class Link(val backTo: String?) : Stage
-    data class Signed(val user: User) : Stage
+    /** Signed in; [profiles] is null on a home without viewing profiles. */
+    data class Signed(val user: User, val profiles: Profiles? = null) : Stage
+    /** Which of this account's viewing profiles is watching (home's Profile › TV profiles). */
+    data class ChooseProfile(val user: User, val profiles: Profiles) : Stage
 }
 
 class MainActivity : ComponentActivity() {
@@ -79,6 +85,9 @@ private fun Root(api: ApiClient) {
     // With several people on this TV it asks who's watching when opened; with one it just opens.
     var stage by remember { mutableStateOf<Stage>(if (api.people.size > 1) Stage.Who else Stage.Checking) }
     var attempt by remember { mutableIntStateOf(0) }
+    // Which profile is watching is asked once when the app opens, and again after choosing
+    // another person; never when the TV was left in a restricted profile (Kids stays Kids).
+    var askProfile by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     // Through the app's client for its user agent, but none of the session goes to GitHub.
@@ -101,7 +110,11 @@ private fun Root(api: ApiClient) {
             val user = api.currentUser()
             if (user != null) {
                 api.remember(user)
-                stage = Stage.Signed(user)
+                // An older home has no profiles, and a failure here only means none are offered.
+                val profiles = runCatching { api.profiles() }.getOrNull()
+                val ask = askProfile && profiles != null && profiles.profiles.isNotEmpty() && profiles.worn?.restricted != true
+                askProfile = false
+                stage = if (ask) Stage.ChooseProfile(user, profiles!!) else Stage.Signed(user, profiles)
             } else {
                 api.clearSession()
                 afterLeaving()
@@ -125,9 +138,11 @@ private fun Root(api: ApiClient) {
         val signed = stage as? Stage.Signed ?: return@LifecycleEventEffect
         scope.launch {
             val user = runCatching { api.currentUser() }.getOrNull()
-            if (stage == signed && user != null && user.id == signed.user.id && user != signed.user) {
+            // A profile renamed or deleted in Profile reaches the TV the same way.
+            val profiles = runCatching { api.profiles() }.getOrNull() ?: signed.profiles
+            if (stage == signed && user != null && user.id == signed.user.id && (user != signed.user || profiles != signed.profiles)) {
                 api.remember(user)
-                stage = Stage.Signed(user)
+                stage = Stage.Signed(user, profiles)
             }
         }
     }
@@ -141,6 +156,7 @@ private fun Root(api: ApiClient) {
     // the sign-in screens are nobody's in particular.
     val theme = when (val current = stage) {
         is Stage.Signed -> current.user.theme
+        is Stage.ChooseProfile -> current.user.theme
         Stage.Who, Stage.Connect -> null
         else -> api.activeTheme
     }
@@ -166,6 +182,7 @@ private fun Root(api: ApiClient) {
                     people = api.people,
                     onChoose = {
                         api.switchTo(it)
+                        askProfile = true
                         check()
                     },
                     onAdd = {
@@ -189,7 +206,17 @@ private fun Root(api: ApiClient) {
                         onLinked = { check() }
                     )
                 }
-                is Stage.Signed -> key(current.user.id) {
+                is Stage.ChooseProfile -> InLanguage(current.user.language) {
+                    ProfileScreen(current.user, current.profiles) { id ->
+                        scope.launch {
+                            // Home keeps the choice on this TV's session; if it can't, carry on as before.
+                            val worn = runCatching { api.wearProfile(id) }.getOrNull() ?: current.profiles
+                            stage = Stage.Signed(current.user, worn)
+                        }
+                    }
+                }
+                // A new profile is a new set of screens: its rows, its libraries, its history.
+                is Stage.Signed -> key(current.user.id, current.profiles?.current) {
                     val video = remember { VideoFeature(VideoApi(api), current.user.id) }
                     // Games joins the menu once the server says this person may play (as the
                     // website decides its Games entry); video is there from the start.
@@ -201,8 +228,15 @@ private fun Root(api: ApiClient) {
                             features,
                             current.user,
                             people = api.people,
+                            profiles = current.profiles,
+                            onWear = { id ->
+                                scope.launch {
+                                    runCatching { api.wearProfile(id) }.onSuccess { stage = Stage.Signed(current.user, it) }
+                                }
+                            },
                             onSwitch = {
                                 api.switchTo(it)
+                                askProfile = true
                                 check()
                             },
                             onAdd = {

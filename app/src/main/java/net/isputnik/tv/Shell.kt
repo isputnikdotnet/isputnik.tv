@@ -40,6 +40,7 @@ import net.isputnik.tv.core.LocalFocusMemory
 import net.isputnik.tv.core.LocalNavigator
 import net.isputnik.tv.core.Navigator
 import net.isputnik.tv.core.Person
+import net.isputnik.tv.core.Profiles
 import net.isputnik.tv.core.RestoreFocus
 import net.isputnik.tv.core.Route
 import net.isputnik.tv.core.TopBar
@@ -71,10 +72,13 @@ private data object AccountRoute : Route {
     override val key = "account"
 }
 
-/** What's reached from the name at the top right: who's watching, adding someone, leaving. */
+/** What's reached from the name at the top right: who's watching (people, and this account's
+ *  viewing profiles), adding someone, leaving. */
 private class AccountFeature(
     private val user: User,
     private val people: List<Person>,
+    private val profiles: Profiles?,
+    private val onWear: (String?) -> Unit,
     private val onSwitch: (String) -> Unit,
     private val onAdd: () -> Unit,
     private val onUnlink: () -> Unit
@@ -91,8 +95,21 @@ private class AccountFeature(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(people, key = { it.id }) { person ->
                     val mine = person.id == user.id
-                    PersonTile(person.name, CoreR.drawable.ic_person, mine, Modifier.remembersFocus("person/${person.id}", isDefault = mine)) {
-                        if (mine) nav.back() else onSwitch(person.id)
+                    // This account itself is "selected" only while it wears no profile.
+                    val here = mine && profiles?.current == null
+                    PersonTile(person.name, CoreR.drawable.ic_person, here, Modifier.remembersFocus("person/${person.id}", isDefault = here)) {
+                        when {
+                            here -> nav.back()
+                            mine -> onWear(null)
+                            else -> onSwitch(person.id)
+                        }
+                    }
+                }
+                // This account's profiles, after the people.
+                items(profiles?.profiles.orEmpty(), key = { "profile/${it.id}" }) { profile ->
+                    val worn = profile.id == profiles?.current
+                    ProfileTile(profile.name, profile.avatar, worn, Modifier.remembersFocus("profile/${profile.id}", isDefault = worn)) {
+                        if (worn) nav.back() else onWear(profile.id)
                     }
                 }
                 item(key = "add") { PersonTile(stringResource(R.string.who_add), R.drawable.ic_add, false, Modifier.remembersFocus("add"), onAdd) }
@@ -120,12 +137,14 @@ internal fun Shell(
     features: List<Feature>,
     user: User,
     people: List<Person>,
+    profiles: Profiles?,
+    onWear: (String?) -> Unit,
     onSwitch: (String) -> Unit,
     onAdd: () -> Unit,
     onUnlink: () -> Unit,
     updates: Updates
 ) {
-    val account = remember(user, people) { AccountFeature(user, people, onSwitch, onAdd, onUnlink) }
+    val account = remember(user, people, profiles) { AccountFeature(user, people, profiles, onWear, onSwitch, onAdd, onUnlink) }
     val all = remember(features, account, updates) { features + account + UpdateFeature(updates) }
     val destinations = remember(all) { all.flatMap { it.destinations } }
     val holder = rememberSaveableStateHolder()
@@ -144,7 +163,8 @@ internal fun Shell(
                 appName = stringResource(R.string.app_name),
                 destinations = destinations,
                 current = route,
-                personName = user.displayName,
+                // The profile worn, else the account: the name the family picked on this TV.
+                personName = profiles?.worn?.name ?: user.displayName,
                 onSelect = { nav.select(it) },
                 onPerson = { nav.push(AccountRoute) },
                 notice = updates.available?.let { stringResource(R.string.update_notice) },
