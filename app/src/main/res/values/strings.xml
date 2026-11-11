@@ -56,4 +56,19 @@
     <string name="action_search">Search</string>
     <string name="action_settings">Settings</string>
     <string name="action_profile">Who\'s watching: %1$s</string>
+    <string name="menu_speed_test">Test connection speed</string>
+    <string name="speed_title">Connection speed to your iSputnik</string>
+    <string name="speed_connecting">Connecting…</string>
+    <string name="speed_running">Downloading from the server for a few seconds.</string>
+    <string name="speed_mbit">Mbit/s</string>
+    <string name="speed_kbit">kbit/s</string>
+    <string name="speed_verdict_4k">Enough for anything, 4K and Blu-ray files as they are.</string>
+    <string name="speed_verdict_1080">Enough for 1080p, and most films as they are.</string>
+    <string name="speed_verdict_720">Enough for 720p. Large files may stop to load.</string>
+    <string name="speed_verdict_480">Enough for 480p only.</string>
+    <string name="speed_verdict_slow">Too slow for smooth video.</string>
+    <string name="speed_note">Measured from this TV to the server just now. Others watching at the same time share the link.</string>
+    <string name="speed_old_server">Your iSputnik is too old for this test. Update it to 4.84 or later.</string>
+    <string name="speed_failed">Unable to test the speed: the server didn\'t answer.</string>
+    <string name="speed_again">Test again</string>
 </resources>

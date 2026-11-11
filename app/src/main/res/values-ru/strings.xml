@@ -56,4 +56,19 @@
     <string name="action_search">Поиск</string>
     <string name="action_settings">Настройки</string>
     <string name="action_profile">Кто смотрит: %1$s</string>
+    <string name="menu_speed_test">Проверить скорость соединения</string>
+    <string name="speed_title">Скорость соединения с iSputnik</string>
+    <string name="speed_connecting">Соединение…</string>
+    <string name="speed_running">Несколько секунд загружаем данные с сервера.</string>
+    <string name="speed_mbit">Мбит/с</string>
+    <string name="speed_kbit">кбит/с</string>
+    <string name="speed_verdict_4k">Хватит на всё, даже 4K и файлы Blu-ray как есть.</string>
+    <string name="speed_verdict_1080">Хватит на 1080p и на большинство фильмов как есть.</string>
+    <string name="speed_verdict_720">Хватит на 720p. Большие файлы могут останавливаться для загрузки.</string>
+    <string name="speed_verdict_480">Хватит только на 480p.</string>
+    <string name="speed_verdict_slow">Слишком медленно для плавного видео.</string>
+    <string name="speed_note">Измерено только что, от этого телевизора до сервера. Если смотрят и другие, соединение делится между всеми.</string>
+    <string name="speed_old_server">Ваш iSputnik слишком старый для этой проверки. Обновите его до 4.84 или новее.</string>
+    <string name="speed_failed">Не удалось проверить скорость: сервер не ответил.</string>
+    <string name="speed_again">Проверить ещё раз</string>
 </resources>

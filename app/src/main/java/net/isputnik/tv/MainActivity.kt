@@ -320,7 +320,8 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
                                 }
                             },
                             onExit = onExit,
-                            updates = updates
+                            updates = updates,
+                            api = api
                         )
                     }
                 }

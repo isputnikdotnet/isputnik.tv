@@ -121,7 +121,10 @@ data class ListedTitle(
 @Serializable data class LibraryList(val libraries: List<LibraryRef> = emptyList())
 
 @Serializable data class Busy(val limit: Int = 0, val reason: String? = null, val title: String? = null)
-@Serializable data class Playback(val mode: String = "none", val url: String? = null, val original: String? = null, val busy: Busy? = null)
+/** The picture's rung (engine 0.31+): `current` is the height the converted copy is held to,
+ *  null for no cap; an older engine says nothing. */
+@Serializable data class PlayQuality(val current: Int? = null, val allowed: List<Int?> = emptyList(), val network: String? = null)
+@Serializable data class Playback(val mode: String = "none", val url: String? = null, val original: String? = null, val busy: Busy? = null, val quality: PlayQuality? = null)
 
 @Serializable
 data class PlayInfo(

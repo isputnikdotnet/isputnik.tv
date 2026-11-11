@@ -46,7 +46,7 @@
     <string name="video_watched">Watched</string>
     <string name="video_episode_untitled">Episode %1$d</string>
     <string name="video_season">Season %1$d</string>
-    <string name="player_converted">This TV can\'t play the file as it is, so a converted copy is playing.</string>
+    <string name="player_converted">This TV can\'t play the original file.</string>
     <string name="player_failed_title">Unable to play this video</string>
     <string name="player_failed_decoder">This TV can\'t play the file, and no converted copy is available.</string>
     <string name="player_failed_network">The connection to your iSputnik was lost.</string>
@@ -95,4 +95,11 @@
         <item quantity="one">%1$d unwatched</item>
         <item quantity="other">%1$d unwatched</item>
     </plurals>
+    <string name="quality_original">Original file</string>
+    <string name="quality_repacked">Original picture, repacked</string>
+    <string name="quality_converted">Converted copy</string>
+    <string name="quality_converted_rung">Converted to %1$s</string>
+    <string name="quality_upscaled">Upscaled to the %1$s screen</string>
+    <string name="quality_downscaled">Downscaled to the %1$s screen</string>
+    <string name="quality_native">At the screen\'s own size</string>
 </resources>

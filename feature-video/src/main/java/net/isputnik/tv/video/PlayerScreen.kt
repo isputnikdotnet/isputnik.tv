@@ -61,6 +61,7 @@ import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.player.PlayFailure
 import net.isputnik.tv.player.TvPlayer
 import net.isputnik.tv.player.TvPlayerEvents
+import net.isputnik.tv.player.copyOf
 import kotlinx.coroutines.CancellationException
 
 private const val SAVE_EVERY_MS = 15_000L
@@ -158,6 +159,10 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
     /** Seconds until the next title; null when no card is up. */
     var nextIn by remember { mutableStateOf<Int?>(null) }
     var creditsOffered by remember { mutableStateOf(false) }
+    /** What the converted copy is, as the engine last answered: repacked or made again, at which rung. */
+    var convertedMode by remember { mutableStateOf(info.playback.mode) }
+    var convertedRung by remember { mutableStateOf(info.playback.quality?.current) }
+    var nowPlaying by remember { mutableStateOf<NowPlaying?>(null) }
     val exit by rememberUpdatedState(onExit)
     val background = video.api.background
 
@@ -221,6 +226,7 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
     }
     LaunchedEffect(Unit) {
         while (true) {
+            holder[0]?.let { nowPlaying = readNowPlaying(context, it) }
             holder[0]?.player?.let { player ->
                 position = player.currentPosition
                 duration = player.duration.takeIf { it != C.TIME_UNSET } ?: 0
@@ -283,6 +289,10 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
         val answer = runCatching { video.play(info.id, audioIndex, burn) }.getOrNull()
         val url = answer?.playback?.url?.takeIf { answer.playback.busy == null && answer.playback.mode != "direct" }
         if (url == null) notice = R.string.player_choice_failed
+        else {
+            convertedMode = answer.playback.mode
+            convertedRung = answer.playback.quality?.current
+        }
         return url?.let(video::absolute)
     }
 
@@ -429,6 +439,10 @@ private fun Playing(video: VideoApi, start: PlayStart, fromStart: Boolean, prefs
         if (showControls && layer != Layer.NEXT_CARD) {
             Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(TvColors.Background.copy(alpha = 0.7f)).padding(horizontal = 40.dp, vertical = 18.dp)) {
                 Text(info.heading(), color = TvColors.Text, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                nowPlaying?.let { now ->
+                    val copy = copyOf(now.converted, convertedMode, convertedRung)
+                    Text(qualityLine(now, copy), color = TvColors.Muted, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
+                }
                 notice?.let { Text(stringResource(it), color = TvColors.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 3.dp)) }
                 Spacer(Modifier.height(10.dp))
                 ProgressLine(if (duration > 0) position.toFloat() / duration else 0f, Modifier.fillMaxWidth(), height = 6.dp)

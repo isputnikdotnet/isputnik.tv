@@ -56,6 +56,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.tv.material3.Icon
+import net.isputnik.tv.core.ApiClient
 import net.isputnik.tv.core.Avatar
 import net.isputnik.tv.core.MenuDivider
 import net.isputnik.tv.core.MenuEntry
@@ -145,10 +146,11 @@ internal fun Shell(
     onUnlink: () -> Unit,
     onRefresh: () -> Unit,
     onExit: () -> Unit,
-    updates: Updates
+    updates: Updates,
+    api: ApiClient
 ) {
     val who = remember(user, people, profiles) { WhoFeature(user, people, profiles, onWear, onSwitch) }
-    val all = remember(features, who, updates) { features + who + UpdateFeature(updates) }
+    val all = remember(features, who, updates, api) { features + who + UpdateFeature(updates) + SpeedTestFeature(api) }
     val destinations = remember(all) { all.flatMap { it.destinations } }
     val holder = rememberSaveableStateHolder()
     val nav = remember { Navigator(destinations.first().route).apply { onLeft = { holder.removeState(it.key) } } }
@@ -184,6 +186,10 @@ internal fun Shell(
                         close()
                         refreshes++
                         onRefresh()
+                    }
+                    MenuEntry(stringResource(R.string.menu_speed_test), CoreR.drawable.ic_speed) {
+                        close()
+                        nav.push(SpeedTestRoute)
                     }
                     MenuEntry(stringResource(R.string.who_add), CoreR.drawable.ic_person_add, locked = locked, lockedLabel = stringResource(R.string.menu_pin)) {
                         close()

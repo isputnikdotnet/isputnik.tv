@@ -48,7 +48,7 @@
     <string name="video_watched">Просмотрено</string>
     <string name="video_episode_untitled">Серия %1$d</string>
     <string name="video_season">Сезон %1$d</string>
-    <string name="player_converted">Телевизор не может воспроизвести файл как есть, поэтому идёт преобразованная копия.</string>
+    <string name="player_converted">Телевизор не может воспроизвести исходный файл.</string>
     <string name="player_failed_title">Не удалось воспроизвести видео</string>
     <string name="player_failed_decoder">Телевизор не может воспроизвести файл, а преобразованной копии нет.</string>
     <string name="player_failed_network">Соединение с iSputnik потеряно.</string>
@@ -103,4 +103,11 @@
         <item quantity="many">Не просмотрено: %1$d</item>
         <item quantity="other">Не просмотрено: %1$d</item>
     </plurals>
+    <string name="quality_original">Исходный файл</string>
+    <string name="quality_repacked">Исходная картинка, переупакована</string>
+    <string name="quality_converted">Преобразованная копия</string>
+    <string name="quality_converted_rung">Преобразовано в %1$s</string>
+    <string name="quality_upscaled">Увеличено до экрана %1$s</string>
+    <string name="quality_downscaled">Уменьшено до экрана %1$s</string>
+    <string name="quality_native">В размер экрана</string>
 </resources>
