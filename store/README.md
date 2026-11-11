@@ -8,9 +8,12 @@ reasons are in `isputnik.home/docs/tv-store-plan.md` (A = Amazon, G = Google).
 - **Privacy policy URL**: <https://github.com/isputnikdotnet/isputnik.tv/blob/main/PRIVACY.md>
 - **Images** (`images/`): 512×512 icon, 114×114 small icon (Amazon), 1280×720 TV banner,
   1024×500 feature graphic (Google). Made from `Assets/*.svg`.
-- **Screenshots**: still to take — 1920×1080, from the Fire TV signed in to the demo server
-  (never the family's): `adb exec-out screencap -p > shot.png`. Home rows, a film's page, a
-  show's episodes, the player with Skip intro, the profile picker, photos.
+- **Screenshots** (`screenshots/`): six at 1920×1080, RGB, taken 2026-11-11 from the Fire TV
+  running the 0.13.1 store APK, signed in to the demo as the Amazon reviewer (never the
+  family's server): Movies, a show's episodes, the player with Skip intro, a film, Photos, a
+  photo full screen. Retake with `adb exec-out screencap -p > shot.png`; a slideshow needs a
+  few tries to miss the crossfade. A profile-picker shot waits until the demo account has more
+  than one profile.
 
 ## Never
 
@@ -101,6 +104,8 @@ word. The reviewer account and its password are per store and kept off the repo.
 > 2. The TV shows a code. On any phone or computer, open https://demo.isputnik.com/link,
 >    sign in with the account below, type the code and the same password, approve.
 > 3. The TV signs in. Films and shows are in Movies and Shows; Photos has a small library.
->    The Kids profile's PIN is in the account notes below.
 >
-> Account: (the store's reviewer member) · Password: (from accounts.txt) · PIN: (household PIN)
+> Account: (the store's reviewer member) · Password: (from accounts.txt)
+
+(If a Kids profile with a PIN is added to the reviewer accounts on the demo, add a step for it
+and the PIN here.)
