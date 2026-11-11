@@ -40,13 +40,18 @@ jobs:
         run: |
           echo "$TV_SIGNING_KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.keystore"
           export TV_SIGNING_STORE="$RUNNER_TEMP/release.keystore"
-          sh gradlew testDebugUnitTest assembleRelease -PrequireKey --console=plain
+          # The GitHub APK, plus the store APK (Amazon) and AAB (Google), all with the real key.
+          sh gradlew testDebugUnitTest testGithubDebugUnitTest assembleGithubRelease assembleStoreRelease bundleStoreRelease -PrequireKey --console=plain
           rm "$RUNNER_TEMP/release.keystore"
 
       - name: Signed with the real key
         run: |
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          "$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk | grep -q "SHA-256 digest: $CERTIFICATE_SHA256"
+          for apk in app/build/outputs/apk/github/release/app-github-release.apk app/build/outputs/apk/store/release/app-store-release.apk; do
+            "$apksigner" verify --print-certs "$apk" | grep -q "SHA-256 digest: $CERTIFICATE_SHA256" || { echo "$apk: not the real key"; exit 1; }
+          done
+          # An AAB is a jar: keytool reads its signer. Play re-signs with this same key (Play App Signing, existing key).
+          keytool -printcert -jarfile app/build/outputs/bundle/storeRelease/app-store-release.aab | tr -d ':' | grep -qi "SHA256 $CERTIFICATE_SHA256" || { echo "AAB: not the real key"; exit 1; }
 
       - name: Publish
         env:
@@ -54,5 +59,16 @@ jobs:
         run: |
           # Always this name, so the address in the guide never changes.
           apk="iSputnik-TV.apk"
-          cp app/build/outputs/apk/release/app-release.apk "$apk"
+          cp app/build/outputs/apk/github/release/app-github-release.apk "$apk"
           gh release create "$GITHUB_REF_NAME" "$apk" --verify-tag --title "iSputnik TV ${GITHUB_REF_NAME#v}" --notes-from-tag
+
+      # Uploaded to Amazon and Google by hand; never attached to the GitHub Release, whose APK
+      # is the one the GitHub build's updater fetches.
+      - name: Keep the store builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-${{ github.ref_name }}
+          path: |
+            app/build/outputs/apk/store/release/app-store-release.apk
+            app/build/outputs/bundle/storeRelease/app-store-release.aab
+          retention-days: 90

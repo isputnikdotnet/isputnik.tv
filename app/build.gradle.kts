@@ -22,7 +22,20 @@ android {
         targetSdk = 35
         versionCode = tvVersionCode
         versionName = tvVersion
-        buildConfigField("String", "RELEASES_URL", "\"${providers.gradleProperty("releasesUrl").get()}\"")
+    }
+    // Two channels, one app: the same applicationId, version code and key, so a TV can move
+    // from the GitHub APK to a store without uninstalling (docs/tv-store-plan.md in home).
+    flavorDimensions += "channel"
+    productFlavors {
+        // Sideloaded from GitHub Releases; updates itself from there (src/github).
+        create("github") {
+            dimension = "channel"
+            buildConfigField("String", "RELEASES_URL", "\"${providers.gradleProperty("releasesUrl").get()}\"")
+        }
+        // Amazon Appstore and Google Play: TV only, no self-update (src/store).
+        create("store") {
+            dimension = "channel"
+        }
     }
     buildFeatures {
         compose = true
