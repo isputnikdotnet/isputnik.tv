@@ -86,4 +86,21 @@
     <string name="video_banner_continue">Продолжить</string>
     <string name="video_banner_film">Фильм</string>
     <string name="video_banner_series">Сериал</string>
+    <string name="video_mark_watched">Отметить как просмотренное</string>
+    <string name="video_mark_unwatched">Отметить как непросмотренное</string>
+    <string name="video_mark_season_watched">Сезон %1$d: отметить просмотренным</string>
+    <string name="video_mark_season_unwatched">Сезон %1$d: отметить непросмотренным</string>
+    <string name="video_season_seen">Просмотрено %1$d из %2$d</string>
+    <plurals name="video_mark_confirm">
+        <item quantity="one">Нажмите ещё раз: %1$d серия</item>
+        <item quantity="few">Нажмите ещё раз: все %1$d серии</item>
+        <item quantity="many">Нажмите ещё раз: все %1$d серий</item>
+        <item quantity="other">Нажмите ещё раз: все %1$d серии</item>
+    </plurals>
+    <plurals name="video_unwatched">
+        <item quantity="one">Не просмотрено: %1$d</item>
+        <item quantity="few">Не просмотрено: %1$d</item>
+        <item quantity="many">Не просмотрено: %1$d</item>
+        <item quantity="other">Не просмотрено: %1$d</item>
+    </plurals>
 </resources>

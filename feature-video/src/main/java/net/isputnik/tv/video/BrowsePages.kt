@@ -166,8 +166,15 @@ internal data class RowCard(
     val subtitle: String? = null,
     val progress: Float? = null,
     val art: PosterArt = PosterArt.MOVIE,
+    /** Finished: a check on the picture. */
+    val watched: Boolean = false,
+    /** A show's episodes still to see, for "8 unwatched". */
+    val unwatched: Int? = null,
     val onClick: () -> Unit
 )
+
+@Composable
+internal fun unwatchedBadge(count: Int?): String? = count?.let { pluralStringResource(R.plurals.video_unwatched, it, it) }
 
 @Composable
 internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
@@ -191,6 +198,8 @@ internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolea
                     progress = card.progress,
                     art = card.art,
                     isDefault = defaultFocus && card === cards.first(),
+                    watched = card.watched,
+                    badge = unwatchedBadge(card.unwatched),
                     onClick = card.onClick
                 )
             }
@@ -199,11 +208,14 @@ internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolea
     }
 }
 
-private fun listedCard(video: VideoApi, nav: Navigator, item: ListedTitle, keyPrefix: String) = RowCard(
+private fun listedCard(video: VideoApi, nav: Navigator, item: ListedTitle, keyPrefix: String, mark: WatchMark = item.watchMark()) = RowCard(
     key = "$keyPrefix/${item.kind}/${item.id}",
     title = item.title,
     picture = item.poster?.let(video::absolute),
     subtitle = item.year?.toString(),
+    progress = mark.fraction,
+    watched = mark.watched,
+    unwatched = mark.unwatched,
     art = PosterArt.of(item.kind),
     onClick = { nav.push(if (item.kind == "shows") VideoRoute.ShowPage(item.id) else VideoRoute.MoviePage(item.id)) }
 )
@@ -219,11 +231,14 @@ private fun nameOf(name: RowName): String = when (name) {
     }
 }
 
-private fun summaryCard(video: VideoApi, nav: Navigator, kind: Kind, item: Summary, keyPrefix: String) = RowCard(
+private fun summaryCard(video: VideoApi, nav: Navigator, kind: Kind, item: Summary, keyPrefix: String, mark: WatchMark = item.watchMark()) = RowCard(
     key = "$keyPrefix/${item.id}",
     title = item.title,
     picture = item.poster?.let(video::absolute),
     subtitle = item.year?.toString(),
+    progress = mark.fraction,
+    watched = mark.watched,
+    unwatched = mark.unwatched,
     art = if (kind == Kind.SHOWS) PosterArt.SHOW else PosterArt.MOVIE,
     onClick = { nav.push(if (kind == Kind.SHOWS) VideoRoute.ShowPage(item.id) else VideoRoute.MoviePage(item.id)) }
 )
@@ -362,7 +377,7 @@ internal fun KindPage(video: VideoApi, store: VideoStore, nav: Navigator, kind: 
                             Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 row.forEach { title ->
                                     val card = summaryCard(video, nav, kind, title, "all")
-                                    PosterCard(card.title, card.picture, card.key, PosterWidth, PosterHeight, subtitle = card.subtitle, art = card.art, isDefault = index == 0 && title === row.first() && data.banner == null && drawn.isEmpty(), onClick = card.onClick)
+                                    PosterCard(card.title, card.picture, card.key, PosterWidth, PosterHeight, subtitle = card.subtitle, progress = card.progress, art = card.art, watched = card.watched, badge = unwatchedBadge(card.unwatched), isDefault = index == 0 && title === row.first() && data.banner == null && drawn.isEmpty(), onClick = card.onClick)
                                 }
                             }
                         }

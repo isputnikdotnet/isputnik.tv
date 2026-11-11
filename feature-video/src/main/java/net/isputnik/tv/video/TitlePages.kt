@@ -23,10 +23,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
@@ -37,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
+import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.core.Navigator
 import net.isputnik.tv.core.PageMessage
 import net.isputnik.tv.core.PosterArt
@@ -98,9 +102,42 @@ private fun <T : Any> rememberTitle(id: String, load: suspend (String) -> T): Tr
     return Triple(value, failed, { attempt++ })
 }
 
+/** Marks by hand (home's issue #101), then reads the title again: what Play starts and every
+ *  bar follow from the engine. A mark that didn't get through changes nothing on screen. */
+@Composable
+private fun rememberMarker(reload: () -> Unit): (suspend () -> Unit) -> Unit {
+    val scope = rememberCoroutineScope()
+    return { work ->
+        scope.launch {
+            try {
+                work()
+            } catch (_: java.io.IOException) {
+            } catch (_: ApiException) {
+            }
+            reload()
+        }
+    }
+}
+
+/** Many episodes at once are asked about first, the remote's way: the button says what it is
+ *  about to do, and a second press does it. Looking away from it takes the question back. */
+@Composable
+private fun ConfirmedButton(label: String, question: String, modifier: Modifier = Modifier, onConfirmed: () -> Unit) {
+    var asked by remember(label) { mutableStateOf(false) }
+    TvButton(if (asked) question else label, modifier.onFocusChanged { if (!it.hasFocus) asked = false }) {
+        if (asked) {
+            asked = false
+            onConfirmed()
+        } else {
+            asked = true
+        }
+    }
+}
+
 @Composable
 internal fun MoviePage(video: VideoApi, nav: Navigator, id: String) {
     val (movie, failed, retry) = rememberTitle(id) { video.movie(it) }
+    val mark = rememberMarker(retry)
     when {
         movie == null && failed -> PageMessage(stringResource(R.string.video_load_failed), stringResource(R.string.video_retry), retry)
         movie == null -> PageMessage(stringResource(R.string.video_loading))
@@ -121,6 +158,19 @@ internal fun MoviePage(video: VideoApi, nav: Navigator, id: String) {
                             if (started) {
                                 Spacer(Modifier.width(12.dp))
                                 TvButton(stringResource(R.string.video_start_over), Modifier.remembersFocus("over")) { nav.push(VideoRoute.Play(movie.id, fromStart = true)) }
+                            }
+                            // Seen at the cinema, or to be watched again: the film with every part of it.
+                            Spacer(Modifier.width(12.dp))
+                            val watched = movie.progress?.watched == true
+                            TvButton(stringResource(if (watched) R.string.video_mark_unwatched else R.string.video_mark_watched), Modifier.remembersFocus("mark")) {
+                                mark {
+                                    if (movie.marksAll) video.markAll(Kind.MOVIES, movie.id, !watched)
+                                    else video.markEach(
+                                        if (movie.parts.size > 1) movie.parts.map { MarkTarget(it.id, it.progress?.duration) }
+                                        else listOf(MarkTarget(movie.playId ?: movie.id, movie.progress?.duration ?: movie.runtimeMinutes?.let { it * 60.0 })),
+                                        !watched
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(24.dp))
@@ -172,6 +222,9 @@ internal fun MoviePage(video: VideoApi, nav: Navigator, id: String) {
 internal fun ShowPage(video: VideoApi, nav: Navigator, id: String) {
     val (show, failed, retry) = rememberTitle(id) { video.show(it) }
     var chosen by rememberSaveable(id) { mutableStateOf<Int?>(null) }
+    /** The episode the remote was on last: the one its Mark button is about. */
+    var pointed by remember(id) { mutableStateOf<String?>(null) }
+    val mark = rememberMarker(retry)
     when {
         show == null && failed -> PageMessage(stringResource(R.string.video_load_failed), stringResource(R.string.video_retry), retry)
         show == null -> PageMessage(stringResource(R.string.video_loading))
@@ -209,6 +262,27 @@ internal fun ShowPage(video: VideoApi, nav: Navigator, id: String) {
                         }
                     }
                 }
+                // The season on screen, all of it: watched somewhere else, or to be seen again.
+                current?.takeIf { it.episodes.isNotEmpty() }?.let { season ->
+                    item(key = "season-mark/${season.number}") {
+                        val seen = season.episodes.count { it.progress?.watched == true }
+                        val all = seen == season.episodes.size
+                        Row(Modifier.padding(horizontal = PageGutter).padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.video_season_seen, seen, season.episodes.size), color = TvColors.Muted, fontSize = 13.sp)
+                            Spacer(Modifier.width(14.dp))
+                            ConfirmedButton(
+                                stringResource(if (all) R.string.video_mark_season_unwatched else R.string.video_mark_season_watched, season.number),
+                                pluralStringResource(R.plurals.video_mark_confirm, season.episodes.size, season.episodes.size),
+                                Modifier.remembersFocus("season-mark")
+                            ) {
+                                mark {
+                                    if (show.marksAll) video.markAll(Kind.SHOWS, show.id, !all, season.number)
+                                    else video.markEach(season.episodes.map { MarkTarget(it.id, it.progress?.duration ?: it.runtimeMinutes?.let { minutes -> minutes * 60.0 }) }, !all)
+                                }
+                            }
+                        }
+                    }
+                }
                 current?.let { season ->
                     item(key = "episodes/${season.number}") {
                         LazyRow(state = rememberLazyListState(), contentPadding = PaddingValues(horizontal = PageGutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -223,8 +297,28 @@ internal fun ShowPage(video: VideoApi, nav: Navigator, id: String) {
                                         if (episode.progress?.watched == true) " · " + stringResource(R.string.video_watched) else "",
                                     progress = episode.progress.fraction(),
                                     art = PosterArt.SHOW,
-                                    isDefault = next == null && episode === season.episodes.first()
+                                    isDefault = next == null && episode === season.episodes.first(),
+                                    modifier = Modifier.onFocusChanged { if (it.hasFocus) pointed = episode.id }
                                 ) { nav.push(VideoRoute.Play(episode.id)) }
+                            }
+                        }
+                    }
+                    // One episode: the one the remote was on last (the next one up, until it has
+                    // been on any), named on the button so there is no doubt which.
+                    val episode = season.episodes.firstOrNull { it.id == pointed } ?: season.episodes.firstOrNull { it.id == next?.id } ?: season.episodes.firstOrNull()
+                    if (episode != null) {
+                        item(key = "episode-mark/${season.number}") {
+                            val watched = episode.progress?.watched == true
+                            Row(Modifier.padding(horizontal = PageGutter).padding(top = 12.dp)) {
+                                TvButton(
+                                    stringResource(R.string.video_banner_code, season.number, episode.episode) + " · " +
+                                        stringResource(if (watched) R.string.video_mark_unwatched else R.string.video_mark_watched),
+                                    Modifier.remembersFocus("episode-mark")
+                                ) {
+                                    mark {
+                                        video.markEach(listOf(MarkTarget(episode.id, episode.progress?.duration ?: episode.runtimeMinutes?.let { it * 60.0 })), !watched)
+                                    }
+                                }
                             }
                         }
                     }

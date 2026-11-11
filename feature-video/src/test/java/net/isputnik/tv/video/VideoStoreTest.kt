@@ -51,6 +51,27 @@ class VideoStoreTest {
         assertNull((null as Progress?).fraction())
     }
 
+    @Test fun `a poster says nothing for a title never started, or from an engine that says nothing`() {
+        assertEquals(WatchMark(), Summary(id = "m", title = "Film").watchMark())
+        assertEquals(WatchMark(), Summary(id = "s", title = "Show", episodes = 10, watchedEpisodes = 0).watchMark())
+        // A peek is not a place to come back to.
+        assertEquals(WatchMark(), Summary(id = "m", title = "Film", progress = Progress(12.0, 6000.0)).watchMark())
+    }
+
+    @Test fun `a film left part-way has a bar, a finished one a check and no bar`() {
+        assertEquals(0.25f, Summary(id = "m", title = "Film", progress = Progress(1500.0, 6000.0)).watchMark().fraction!!, 0.001f)
+        assertEquals(WatchMark(watched = true), Summary(id = "m", title = "Film", progress = Progress(6000.0, 6000.0, watched = true)).watchMark())
+    }
+
+    @Test fun `a show part seen counts what is left, and a new episode brings a finished one back`() {
+        val show = ListedTitle(kind = "shows", id = "s", title = "Show", episodes = 10, watchedEpisodes = 2, started = true)
+        assertEquals(WatchMark(fraction = 0.2f, unwatched = 8), show.watchMark())
+        assertEquals(WatchMark(watched = true), show.copy(watchedEpisodes = 10).watchMark())
+        assertEquals(WatchMark(fraction = 10f / 11f, unwatched = 1), show.copy(episodes = 11, watchedEpisodes = 10).watchMark())
+        // One episode begun and none finished: started, with every episode still to see.
+        assertEquals(WatchMark(unwatched = 10), show.copy(watchedEpisodes = 0).watchMark())
+    }
+
     @Test fun `focus returns to the card left, if it's still there`() {
         val present = setOf("a", "b")
         assertEquals("b", FocusMemory.choose("b", "a", present))

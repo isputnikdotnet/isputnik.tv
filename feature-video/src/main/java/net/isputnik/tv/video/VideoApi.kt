@@ -12,9 +12,17 @@ import java.net.URLEncoder
 
 @Serializable data class Status(val enabled: Boolean = false)
 @Serializable data class Page<T>(val items: List<T> = emptyList(), val total: Int = 0)
-@Serializable data class Summary(val id: String, val title: String, val year: Int? = null, val poster: String? = null)
 @Serializable data class ShowRef(val id: String, val title: String)
 @Serializable data class Progress(val position: Double = 0.0, val duration: Double? = null, val watched: Boolean = false)
+
+/** A film or show in a list of one kind. Where this person is in it rides along from engine
+ *  0.32: a film's place, a show's count of episodes seen; an older engine says neither, and
+ *  the poster is plain. */
+@Serializable
+data class Summary(
+    val id: String, val title: String, val year: Int? = null, val poster: String? = null,
+    val progress: Progress? = null, val episodes: Int = 0, val watchedEpisodes: Int? = null, val started: Boolean = false
+)
 
 @Serializable
 data class ContinueItem(
@@ -42,7 +50,9 @@ data class Show(
     val genres: List<String> = emptyList(), val rating: Double? = null,
     val poster: String? = null, val backdrop: String? = null,
     val seasons: List<Season> = emptyList(), val nextUp: NextUp? = null,
-    val cast: List<Credit> = emptyList(), val crew: List<Credit> = emptyList()
+    val cast: List<Credit> = emptyList(), val crew: List<Credit> = emptyList(),
+    /** A whole show or season can be marked in one call (engine 0.32+). */
+    val marksAll: Boolean = false
 )
 
 /** One file of a film in several (engine 0.14+); a miniseries kept as a film names each part as
@@ -65,7 +75,9 @@ data class Movie(
     /** What Play starts: the film, or the part this person has got to (engine 0.14+). */
     val playId: String? = null,
     val parts: List<Part> = emptyList(),
-    val cast: List<Credit> = emptyList(), val crew: List<Credit> = emptyList()
+    val cast: List<Credit> = emptyList(), val crew: List<Credit> = emptyList(),
+    /** Every part can be marked in one call (engine 0.32+). */
+    val marksAll: Boolean = false
 )
 
 /** GET /people?q= — someone a search found. */
@@ -99,7 +111,11 @@ data class HomeRow(
 )
 @Serializable data class HomeLayout(val rows: List<HomeRow> = emptyList())
 /** A film or show in a list that holds both: the engine's /titles, My list, a Collection row. */
-@Serializable data class ListedTitle(val kind: String, val id: String, val title: String, val year: Int? = null, val poster: String? = null)
+@Serializable
+data class ListedTitle(
+    val kind: String, val id: String, val title: String, val year: Int? = null, val poster: String? = null,
+    val progress: Progress? = null, val episodes: Int = 0, val watchedEpisodes: Int? = null, val started: Boolean = false
+)
 @Serializable data class TitleList(val name: String? = null, val items: List<ListedTitle> = emptyList())
 @Serializable data class LibraryRef(val id: String, val name: String)
 @Serializable data class LibraryList(val libraries: List<LibraryRef> = emptyList())
@@ -128,6 +144,10 @@ data class PlayInfo(
 }
 
 @Serializable private data class ProgressBody(val position: Double, val duration: Double?, val watched: Boolean? = null)
+@Serializable private data class WatchedBody(val watched: Boolean, val season: Int? = null)
+
+/** Something marked watched or not by hand: its id, and how long it is when that is known. */
+data class MarkTarget(val id: String, val duration: Double?)
 
 /** The engine's own sort names. */
 enum class Sort(val query: String, val label: Int) {
@@ -202,6 +222,22 @@ class VideoApi(val api: ApiClient) {
         api.send("PUT", "$BASE/progress/$id", body)
     }
 
+    /** Marks a whole show, one season of it, or a film with every part, watched or never
+     *  seen (engine 0.32+, which a title says with `marksAll`). */
+    suspend fun markAll(kind: Kind, id: String, watched: Boolean, season: Int? = null) {
+        val body = api.json.encodeToString(WatchedBody.serializer(), WatchedBody(watched, season))
+        api.send("PUT", "$BASE/watched/${kind.path}/$id", body)
+    }
+
+    /** The same one at a time, for a single episode — and for an engine before 0.32. Watched:
+     *  each at its end, the last of them last, so what follows is next. Not watched: back at
+     *  the start, the first of them last, so it is the one to play. */
+    suspend fun markEach(targets: List<MarkTarget>, watched: Boolean) {
+        for (target in if (watched) targets else targets.reversed()) {
+            saveProgress(target.id, if (watched) target.duration ?: 0.0 else 0.0, target.duration, watched)
+        }
+    }
+
     /** The engine would stop a conversion nobody reads after a minute; this saves that minute. */
     suspend fun stopConverting(id: String) {
         api.send("DELETE", "$BASE/hls/$id")
@@ -238,6 +274,30 @@ fun minutesLeft(position: Double, duration: Double?): Int? {
 /** How far through, 0–1; null when there's nothing to draw. */
 fun fractionOf(position: Double, duration: Double?): Float? =
     if (duration != null && duration > 0 && position > 0) (position / duration).toFloat().coerceIn(0f, 1f) else null
+
+/** Less than this in is a peek, not a place to come back to (the engine's RESUME_MIN_S). */
+private const val RESUME_MIN_S = 30.0
+
+/** What a poster says about where this person is in a title, and nothing for one never
+ *  started: a bar for a film left part-way or a show part seen, a check for one finished, a
+ *  count of episodes still to see on a show that is started. */
+data class WatchMark(val fraction: Float? = null, val watched: Boolean = false, val unwatched: Int? = null)
+
+/** `watchedEpisodes` is only ever said of a show; a film has `progress`. */
+fun watchMark(progress: Progress?, episodes: Int, watchedEpisodes: Int?, started: Boolean): WatchMark {
+    if (watchedEpisodes != null) {
+        if (episodes <= 0) return WatchMark()
+        if (watchedEpisodes >= episodes) return WatchMark(watched = true)
+        val left = if (started || watchedEpisodes > 0) episodes - watchedEpisodes else null
+        return WatchMark(fraction = if (watchedEpisodes > 0) watchedEpisodes.toFloat() / episodes else null, unwatched = left)
+    }
+    if (progress == null) return WatchMark()
+    if (progress.watched) return WatchMark(watched = true)
+    return WatchMark(fraction = if (progress.position >= RESUME_MIN_S) fractionOf(progress.position, progress.duration) else null)
+}
+
+fun Summary.watchMark(): WatchMark = watchMark(progress, episodes, watchedEpisodes, started)
+fun ListedTitle.watchMark(): WatchMark = watchMark(progress, episodes, watchedEpisodes, started)
 
 fun Progress?.fraction(): Float? = when {
     this == null -> null

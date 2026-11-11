@@ -82,4 +82,17 @@
     <string name="video_banner_continue">Continue</string>
     <string name="video_banner_film">Film</string>
     <string name="video_banner_series">Series</string>
+    <string name="video_mark_watched">Mark as watched</string>
+    <string name="video_mark_unwatched">Mark as unwatched</string>
+    <string name="video_mark_season_watched">Mark season %1$d as watched</string>
+    <string name="video_mark_season_unwatched">Mark season %1$d as unwatched</string>
+    <string name="video_season_seen">%1$d/%2$d watched</string>
+    <plurals name="video_mark_confirm">
+        <item quantity="one">Press again: %1$d episode</item>
+        <item quantity="other">Press again: all %1$d episodes</item>
+    </plurals>
+    <plurals name="video_unwatched">
+        <item quantity="one">%1$d unwatched</item>
+        <item quantity="other">%1$d unwatched</item>
+    </plurals>
 </resources>

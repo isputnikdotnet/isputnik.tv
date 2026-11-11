@@ -248,6 +248,10 @@ fun PosterCard(
     progress: Float? = null,
     art: PosterArt? = null,
     isDefault: Boolean = false,
+    /** Finished: a check in the picture's corner. */
+    watched: Boolean = false,
+    /** A few words over the foot of the picture: "8 unwatched". */
+    badge: String? = null,
     onClick: () -> Unit
 ) {
     var failed by remember(picture) { mutableStateOf(false) }
@@ -296,6 +300,30 @@ fun PosterCard(
                         contentScale = ContentScale.Crop,
                         onError = { failed = true },
                         modifier = Modifier.fillMaxSize()
+                    )
+                }
+                // White on any picture and in any theme, as on the website: a theme's accent
+                // can vanish into the art.
+                if (watched) {
+                    Box(
+                        Modifier.align(Alignment.TopStart).padding(6.dp).size(20.dp).clip(RoundedCornerShape(10.dp)).background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ) { Text("✓", color = Color(0xFF14181D), fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                }
+                badge?.let {
+                    Text(
+                        it,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 6.dp, end = 6.dp, bottom = if (progress != null) 10.dp else 6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xAD000000))
+                            .padding(horizontal = 7.dp, vertical = 2.dp)
                     )
                 }
                 progress?.let { ProgressLine(it, Modifier.align(Alignment.BottomStart).fillMaxWidth()) }
