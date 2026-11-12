@@ -11,9 +11,9 @@ reasons are in `isputnik.home/docs/tv-store-plan.md` (A = Amazon, G = Google).
 - **Screenshots** (`screenshots/`): six at 1920×1080, RGB, taken 2026-11-11 from the Fire TV
   running the 0.13.1 store APK, signed in to the demo as the Amazon reviewer (never the
   family's server): Movies, a show's episodes, the player with Skip intro, a film, Photos, a
-  photo full screen. Retake with `adb exec-out screencap -p > shot.png`; a slideshow needs a
-  few tries to miss the crossfade. A profile-picker shot waits until the demo account has more
-  than one profile.
+  photo full screen; and a seventh from 0.14.0, Who's watching? with Everyone and Kids.
+  Retake with `adb exec-out screencap -p > shot.png`; a slideshow needs a few tries to miss
+  the crossfade.
 
 ## Never
 
@@ -101,11 +101,16 @@ word. The reviewer account and its password are per store and kept off the repo.
 > This app needs an iSputnik home server. We run a demo one for review.
 >
 > 1. Open the app and choose Connect. Type: demo.isputnik.com
-> 2. The TV shows a code. On any phone or computer, open https://demo.isputnik.com/link,
->    sign in with the account below, type the code and the same password, approve.
-> 3. The TV signs in. Films and shows are in Movies and Shows; Photos has a small library.
+> 2. The TV shows a QR code and an address with a code. Scan the QR with any phone, or open
+>    the address on a phone or computer. Sign in there with the account below and choose
+>    Sign in and link. The TV signs in by itself.
+> 3. Who's watching? offers Everyone and Kids. Choose Everyone for everything: films and shows
+>    in Movies and Shows, and three photo albums in Photos.
+> 4. Kids is a children's profile: choosing it is free, but leaving it (choosing Everyone
+>    again, or Unlink this TV in Settings) asks for the household PIN below.
 >
-> Account: (the store's reviewer member) · Password: (from accounts.txt)
+> Account: (the store's reviewer member) · Password: (from accounts.txt) · PIN: (household PIN)
 
-(If a Kids profile with a PIN is added to the reviewer accounts on the demo, add a step for it
-and the PIN here.)
+The demo as snapshotted 2026-11-12 01:43 UTC: Kids restricted with the PIN set (all video
+libraries); Park, Food and Cats on the TV for grown-ups only, so Kids has no Photos. The demo
+resets to it nightly. Needs home 4.85.0 or later on the demo for step 2 as written.
