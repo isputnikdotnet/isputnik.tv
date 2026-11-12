@@ -32,6 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -254,15 +259,26 @@ fun PosterCard(
     watched: Boolean = false,
     /** A few words over the foot of the picture: "8 unwatched". */
     badge: String? = null,
+    /** More to do with it (a menu): holding OK, or the remote's Menu button. */
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     var failed by remember(picture) { mutableStateOf(false) }
     Column(modifier.width(width)) {
         Card(
             onClick = onClick,
+            onLongClick = onLongClick,
             scale = CardDefaults.scale(focusedScale = 1.05f),
             border = CardDefaults.border(focusedBorder = Border(BorderStroke(3.dp, TvColors.Accent))),
-            modifier = Modifier.size(width, height).remembersFocus(focusKey, isDefault)
+            modifier = Modifier
+                .size(width, height)
+                .remembersFocus(focusKey, isDefault)
+                .onPreviewKeyEvent { event ->
+                    if (onLongClick != null && event.key == Key.Menu) {
+                        if (event.type == KeyEventType.KeyUp) onLongClick()
+                        true
+                    } else false
+                }
         ) {
             Box(Modifier.fillMaxSize().background(TvColors.Surface)) {
                 if ((picture == null || failed) && art != null) {

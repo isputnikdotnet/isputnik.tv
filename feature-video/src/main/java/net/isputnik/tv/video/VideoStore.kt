@@ -174,6 +174,14 @@ class VideoStore(private val video: VideoApi) {
         video.list(kind, Sort.ADDED).take(VideoApi.ROW_SIZE).map { ListedTitle(kind.path, it.id, it.title, it.year, it.poster) }
     }.getOrDefault(emptyList())
 
+    /** Off Continue watching: gone from every tab at once, then the tab on screen is asked
+     *  again, since its banner may have been the title just removed. */
+    suspend fun removeFromContinue(item: ContinueItem, kind: Kind, sort: Sort) {
+        video.removeFromContinue(item.id)
+        for ((key, data) in tabs.toMap()) tabs[key] = data.copy(resume = data.resume.filter { it.id != item.id })
+        refresh(kind, sort)
+    }
+
     suspend fun refresh(kind: Kind, sort: Sort) {
         val enabled = video.status().enabled
         available = enabled

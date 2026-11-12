@@ -110,4 +110,8 @@
     <string name="quality_upscaled">Увеличено до экрана %1$s</string>
     <string name="quality_downscaled">Уменьшено до экрана %1$s</string>
     <string name="quality_native">В размер экрана</string>
+    <string name="video_continue_hint">Удерживайте OK для меню</string>
+    <string name="video_continue_remove">Убрать из «Продолжить просмотр»</string>
+    <string name="video_continue_removing">Убираем…</string>
+    <string name="video_continue_remove_failed">Не удалось убрать. Возможно, видеоприложение нужно обновить до 0.34 или новее.</string>
 </resources>

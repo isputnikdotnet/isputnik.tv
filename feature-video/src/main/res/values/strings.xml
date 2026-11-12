@@ -102,4 +102,8 @@
     <string name="quality_upscaled">Upscaled to the %1$s screen</string>
     <string name="quality_downscaled">Downscaled to the %1$s screen</string>
     <string name="quality_native">At the screen\'s own size</string>
+    <string name="video_continue_hint">Hold OK for more</string>
+    <string name="video_continue_remove">Remove from Continue watching</string>
+    <string name="video_continue_removing">Removing…</string>
+    <string name="video_continue_remove_failed">Couldn’t remove it. The video app may need updating to 0.34 or newer.</string>
 </resources>

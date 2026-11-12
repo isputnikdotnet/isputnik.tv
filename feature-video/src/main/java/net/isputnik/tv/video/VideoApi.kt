@@ -241,6 +241,12 @@ class VideoApi(val api: ApiClient) {
         }
     }
 
+    /** Takes the show (asked by any of its episodes) or the film off Continue watching for
+     *  this person, keeping the place in it (engine 0.34+). Playing it again brings it back. */
+    suspend fun removeFromContinue(id: String) {
+        api.send("DELETE", "$BASE/continue/$id")
+    }
+
     /** The engine would stop a conversion nobody reads after a minute; this saves that minute. */
     suspend fun stopConverting(id: String) {
         api.send("DELETE", "$BASE/hls/$id")

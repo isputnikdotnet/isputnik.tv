@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -58,6 +59,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.isputnik.tv.core.ApiException
 import net.isputnik.tv.core.LocalFocusMemory
 import net.isputnik.tv.core.Navigator
@@ -170,6 +172,8 @@ internal data class RowCard(
     val watched: Boolean = false,
     /** A show's episodes still to see, for "8 unwatched". */
     val unwatched: Int? = null,
+    /** Its menu: holding OK, or the remote's Menu button. */
+    val onLongClick: (() -> Unit)? = null,
     val onClick: () -> Unit
 )
 
@@ -182,9 +186,15 @@ internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolean = false) {
+internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolean = false, hint: String? = null) {
     Column {
-        SectionTitle(title, Modifier.padding(start = PageGutter))
+        if (hint == null) SectionTitle(title, Modifier.padding(start = PageGutter))
+        else Row(Modifier.padding(start = PageGutter, end = PageGutter), verticalAlignment = Alignment.Bottom) {
+            SectionTitle(title)
+            Spacer(Modifier.width(14.dp))
+            // Holding OK isn't something anyone guesses on a TV: the row says so.
+            Text(hint, color = TvColors.Muted, fontSize = 12.sp, maxLines = 1, modifier = Modifier.padding(bottom = 10.dp))
+        }
         // Its own remembered scroll: the state survives leaving for a title page and coming back.
         LazyRow(state = rememberLazyListState(), contentPadding = PaddingValues(horizontal = PageGutter), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(cards, key = { it.key }) { card ->
@@ -200,6 +210,7 @@ internal fun PosterRow(title: String, cards: List<RowCard>, defaultFocus: Boolea
                     isDefault = defaultFocus && card === cards.first(),
                     watched = card.watched,
                     badge = unwatchedBadge(card.unwatched),
+                    onLongClick = card.onLongClick,
                     onClick = card.onClick
                 )
             }
@@ -319,6 +330,8 @@ internal fun KindPage(video: VideoApi, store: VideoStore, nav: Navigator, kind: 
     val shown = remember(kind) { arrayOfNulls<KindData>(1) }
     store.tab(kind, sort)?.let { shown[0] = it }
     val data = shown[0]
+    /** The Continue watching card whose menu is open. */
+    var menuFor by remember(kind) { mutableStateOf<ContinueItem?>(null) }
     when {
         store.available == false -> PageMessage(stringResource(R.string.video_unavailable), stringResource(R.string.video_retry), retry)
         data == null && failed -> PageMessage(stringResource(R.string.video_load_failed), stringResource(R.string.video_retry), retry)
@@ -354,9 +367,10 @@ internal fun KindPage(video: VideoApi, store: VideoStore, nav: Navigator, kind: 
                                     subtitle = if (item.show != null) episodeLabel(item) else null,
                                     progress = if (item.resume) fractionOf(item.position, item.duration) else null,
                                     art = if (item.show != null) PosterArt.SHOW else PosterArt.MOVIE,
+                                    onLongClick = { menuFor = item },
                                     onClick = { nav.push(VideoRoute.Play(item.id)) }
                                 )
-                            }, defaultFocus = first)
+                            }, defaultFocus = first, hint = stringResource(R.string.video_continue_hint))
                             is HomeEntry.Titles -> PosterRow(title, entry.items.map { listedCard(video, nav, it, entry.key) }, defaultFocus = first)
                             is HomeEntry.Sets -> PosterRow(title, entry.sets.map { set ->
                                 RowCard("${entry.key}/${set.id}", set.name, set.poster?.let(video::absolute), pluralStringResource(R.plurals.video_set_films, set.films, set.films)) { nav.push(VideoRoute.SetPage(set.id)) }
@@ -385,6 +399,81 @@ internal fun KindPage(video: VideoApi, store: VideoStore, nav: Navigator, kind: 
                 }
             }
             RestoreFocus(true)
+            menuFor?.let { item ->
+                ContinueMenu(item, data.resume, store, nav, kind, sort) { menuFor = null }
+            }
+        }
+    }
+}
+
+/** A Continue watching card's menu (home 4.86 has the same on the web): play it, open its
+ *  page, or take it off the row. Off the row, the place in it is kept, and playing it again
+ *  brings it back. Focus goes to the card after it, else the one before, else the banner. */
+@Composable
+private fun ContinueMenu(item: ContinueItem, row: List<ContinueItem>, store: VideoStore, nav: Navigator, kind: Kind, sort: Sort, close: () -> Unit) {
+    val memory = LocalFocusMemory.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    // Where focus goes once the popup is gone: it hands focus to nobody by itself.
+    var after by remember { mutableStateOf<List<String>?>(null) }
+    LaunchedEffect(after) {
+        val keys = after ?: return@LaunchedEffect
+        withFrameNanos { }
+        keys.firstOrNull { memory.focus(it) }
+        close()
+    }
+    val dismiss: () -> Unit = { if (!busy) after = listOf("resume/${item.id}") }
+    Popup(alignment = Alignment.Center, onDismissRequest = dismiss, properties = PopupProperties(focusable = true)) {
+        val first = remember { FocusRequester() }
+        LaunchedEffect(Unit) {
+            withFrameNanos { }
+            runCatching { first.requestFocus() }
+        }
+        Column(
+            Modifier
+                .width(IntrinsicSize.Max)
+                .clip(RoundedCornerShape(10.dp))
+                .background(TvColors.Surface)
+                .border(1.dp, TvColors.Muted.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(item.show?.title ?: item.title, color = TvColors.Text, fontSize = 18.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
+            TvButton(stringResource(if (item.resume) R.string.video_resume else R.string.video_play), Modifier.fillMaxWidth().focusRequester(first), icon = CoreR.drawable.ic_play) {
+                close()
+                nav.push(VideoRoute.Play(item.id))
+            }
+            TvButton(stringResource(if (item.show != null) R.string.video_episodes else R.string.video_more), Modifier.fillMaxWidth(), icon = CoreR.drawable.ic_list) {
+                close()
+                nav.push(if (item.show != null) VideoRoute.ShowPage(item.show.id) else VideoRoute.MoviePage(item.id))
+            }
+            TvButton(stringResource(if (busy) R.string.video_continue_removing else R.string.video_continue_remove), Modifier.fillMaxWidth()) {
+                if (busy) return@TvButton
+                busy = true
+                failed = false
+                val at = row.indexOfFirst { it.id == item.id }
+                val next = listOfNotNull(row.getOrNull(at + 1), row.getOrNull(at - 1)).map { "resume/${it.id}" }
+                scope.launch {
+                    try {
+                        store.removeFromContinue(item, kind, sort)
+                        busy = false
+                        after = next + "banner-play" + "banner-more"
+                    } catch (e: ApiException) {
+                        busy = false
+                        failed = true
+                    } catch (e: java.io.IOException) {
+                        busy = false
+                        failed = true
+                    } catch (e: kotlinx.serialization.SerializationException) {
+                        busy = false
+                        failed = true
+                    }
+                }
+            }
+            if (failed) {
+                Text(stringResource(R.string.video_continue_remove_failed), color = TvColors.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, top = 2.dp).width(280.dp))
+            }
         }
     }
 }
