@@ -37,15 +37,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
-import net.isputnik.tv.core.Person
 import net.isputnik.tv.core.Profiles
-import net.isputnik.tv.core.User
 import net.isputnik.tv.core.profileColor
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.requestWhenReady
 import net.isputnik.tv.core.R as CoreR
 
-/** One person on the row of who can watch. Also used for adding someone. */
+/** Everyone (the account itself, no profile worn) on the row of who can watch. */
 @Composable
 internal fun PersonTile(name: String, icon: Int, selected: Boolean, modifier: Modifier = Modifier, badge: String? = null, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
@@ -71,24 +69,6 @@ internal fun PersonTile(name: String, icon: Int, selected: Boolean, modifier: Mo
         Spacer(Modifier.height(8.dp))
         Text(name, color = if (focused) TvColors.Accent else TvColors.Text, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         badge?.let { Text(it, color = TvColors.Muted, fontSize = 12.sp) }
-    }
-}
-
-/** Who's watching, when a TV has several people on it. Anyone holding the remote can be any of
- *  them: a shared TV is shared on purpose, and the guide says so. */
-@Composable
-internal fun WhoScreen(people: List<Person>, onChoose: (String) -> Unit, onAdd: () -> Unit) {
-    val first = remember { FocusRequester() }
-    LaunchedEffect(Unit) { first.requestWhenReady() }
-    Centered {
-        Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 32.sp, fontFamily = FontFamily.Serif)
-        Spacer(Modifier.height(28.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
-            items(people, key = { it.id }) { person ->
-                PersonTile(person.name, CoreR.drawable.ic_person, false, if (person === people.first()) Modifier.focusRequester(first) else Modifier) { onChoose(person.id) }
-            }
-            item(key = "add") { PersonTile(stringResource(R.string.who_add), R.drawable.ic_add, false, onClick = onAdd) }
-        }
     }
 }
 
@@ -121,10 +101,11 @@ internal fun ProfileTile(name: String, avatar: String, selected: Boolean, modifi
     }
 }
 
-/** Who's watching, among one account's viewing profiles: the account itself first, then each
- *  profile. Asked when the app opens (unless it was left in a restricted profile). */
+/** Who's watching: Everyone (all this TV's account may see) first, then each of the household's
+ *  profiles. Asked when the app opens, when there are profiles (unless it was left in a
+ *  restricted one). */
 @Composable
-internal fun ProfileScreen(user: User, profiles: Profiles, onChoose: (String?) -> Unit) {
+internal fun ProfileScreen(profiles: Profiles, onChoose: (String?) -> Unit) {
     val first = remember { FocusRequester() }
     LaunchedEffect(Unit) { first.requestWhenReady() }
     Centered {
@@ -132,7 +113,7 @@ internal fun ProfileScreen(user: User, profiles: Profiles, onChoose: (String?) -
         Spacer(Modifier.height(28.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
             item(key = "account") {
-                PersonTile(user.displayName, CoreR.drawable.ic_person, profiles.current == null, if (profiles.current == null) Modifier.focusRequester(first) else Modifier) { onChoose(null) }
+                PersonTile(stringResource(R.string.who_everyone), CoreR.drawable.ic_people, profiles.current == null, if (profiles.current == null) Modifier.focusRequester(first) else Modifier) { onChoose(null) }
             }
             items(profiles.profiles, key = { it.id }) { profile ->
                 val worn = profile.id == profiles.current

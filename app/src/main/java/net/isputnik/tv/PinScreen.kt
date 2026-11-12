@@ -34,7 +34,7 @@ import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.requestWhenReady
 
 /** What leaving a locked profile is for, so the pad can say so. */
-internal enum class PinPurpose { Profile, Person, Add, Unlink }
+internal enum class PinPurpose { Profile, Unlink }
 
 private const val PIN_MAX = 8
 private const val PIN_MIN = 4
@@ -113,8 +113,6 @@ internal fun PinScreen(purpose: PinPurpose, submit: suspend (String) -> Unit, on
                 stringResource(
                     when (purpose) {
                         PinPurpose.Profile -> R.string.pin_why_profile
-                        PinPurpose.Person -> R.string.pin_why_person
-                        PinPurpose.Add -> R.string.pin_why_add
                         PinPurpose.Unlink -> R.string.pin_why_unlink
                     }
                 ),

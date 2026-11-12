@@ -39,7 +39,6 @@ import net.isputnik.tv.core.FocusMemory
 import net.isputnik.tv.core.LocalFocusMemory
 import net.isputnik.tv.core.LocalNavigator
 import net.isputnik.tv.core.Navigator
-import net.isputnik.tv.core.Person
 import net.isputnik.tv.core.Profiles
 import net.isputnik.tv.core.RestoreFocus
 import net.isputnik.tv.core.Route
@@ -85,15 +84,13 @@ private data object WhoRoute : Route {
     override val key = "who"
 }
 
-/** Who's watching, behind the profile button in the top bar: this account itself, its
- *  household's profiles, then the other people linked on this TV. Choosing the one already
- *  watching just goes back. Adding a person and unlinking live in the settings menu. */
+/** Who's watching, behind the profile button in the top bar: Everyone (all this TV's account
+ *  may see), then the household's profiles. One account per TV (owner, 2026-11-11): the
+ *  profiles are the way to tell people apart, so there is no adding a person here. Choosing
+ *  the one already watching just goes back. */
 private class WhoFeature(
-    private val user: User,
-    private val people: List<Person>,
     private val profiles: Profiles?,
-    private val onWear: (String?) -> Unit,
-    private val onSwitch: (String) -> Unit
+    private val onWear: (String?) -> Unit
 ) : Feature {
     override val destinations = emptyList<Destination>()
     override fun owns(route: Route) = route == WhoRoute
@@ -106,14 +103,11 @@ private class WhoFeature(
             Text(stringResource(R.string.who_title), color = TvColors.Text, fontSize = 32.sp, fontFamily = FontFamily.Serif)
             Spacer(Modifier.height(28.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val me = people.firstOrNull { it.id == user.id }
-                // This account first: everything it may see, no profile worn.
-                if (me != null) {
-                    item(key = "person/${me.id}") {
-                        val here = profiles?.current == null
-                        PersonTile(me.name, CoreR.drawable.ic_person, here, Modifier.remembersFocus("person/${me.id}", isDefault = here), badge = if (here) null else lockedBadge) {
-                            if (here) nav.back() else onWear(null)
-                        }
+                // Everyone first: all the account may see, no profile worn.
+                item(key = "everyone") {
+                    val here = profiles?.current == null
+                    PersonTile(stringResource(R.string.who_everyone), CoreR.drawable.ic_people, here, Modifier.remembersFocus("everyone", isDefault = here), badge = if (here) null else lockedBadge) {
+                        if (here) nav.back() else onWear(null)
                     }
                 }
                 items(profiles?.profiles.orEmpty(), key = { "profile/${it.id}" }) { profile ->
@@ -121,9 +115,6 @@ private class WhoFeature(
                     ProfileTile(profile.name, profile.avatar, worn, Modifier.remembersFocus("profile/${profile.id}", isDefault = worn), badge = if (worn) null else lockedBadge) {
                         if (worn) nav.back() else onWear(profile.id)
                     }
-                }
-                items(people.filter { it.id != user.id }, key = { "person/${it.id}" }) { person ->
-                    PersonTile(person.name, CoreR.drawable.ic_person, false, Modifier.remembersFocus("person/${person.id}"), badge = lockedBadge) { onSwitch(person.id) }
                 }
             }
         }
@@ -137,19 +128,16 @@ private class WhoFeature(
 internal fun Shell(
     features: List<Feature>,
     user: User,
-    people: List<Person>,
     profiles: Profiles?,
     searchRoute: Route?,
     onWear: (String?) -> Unit,
-    onSwitch: (String) -> Unit,
-    onAdd: () -> Unit,
     onUnlink: () -> Unit,
     onRefresh: () -> Unit,
     onExit: () -> Unit,
     updates: Updates,
     api: ApiClient
 ) {
-    val who = remember(user, people, profiles) { WhoFeature(user, people, profiles, onWear, onSwitch) }
+    val who = remember(profiles) { WhoFeature(profiles, onWear) }
     val all = remember(features, who, updates, api) { features + who + UpdateFeature(updates) + SpeedTestFeature(api) }
     val destinations = remember(all) { all.flatMap { it.destinations } }
     val holder = rememberSaveableStateHolder()
@@ -167,7 +155,8 @@ internal fun Shell(
         BackdropLayer(backdrop.url)
         Column(Modifier.fillMaxSize()) {
         if (destinations.any { it.route == route }) {
-            val shownName = worn?.name ?: user.displayName
+            // Who is watching: a profile, else Everyone. The account's own name is in the menu.
+            val shownName = worn?.name ?: stringResource(R.string.who_everyone)
             TopBar(
                 logo = R.drawable.ic_launcher_foreground,
                 appName = stringResource(R.string.app_name),
@@ -182,12 +171,9 @@ internal fun Shell(
                 settingsLabel = stringResource(R.string.action_settings),
                 menu = { close ->
                     var confirming by remember { mutableStateOf(false) }
-                    // Owner's order (2026-11-11): Add a person, Test connection speed, then the
-                    // rest; Unlink apart and in red, so it is never chosen by drifting down.
-                    MenuEntry(stringResource(R.string.who_add), CoreR.drawable.ic_person_add, locked = locked, lockedLabel = stringResource(R.string.menu_pin)) {
-                        close()
-                        onAdd()
-                    }
+                    // Owner's order (2026-11-11): Test connection speed, Refresh; Unlink apart and
+                    // in red, so it is never chosen by drifting down. No Add a person: one account
+                    // per TV, and the household's profiles tell people apart.
                     MenuEntry(stringResource(R.string.menu_speed_test), CoreR.drawable.ic_speed) {
                         close()
                         nav.push(SpeedTestRoute)
@@ -200,7 +186,7 @@ internal fun Shell(
                     MenuDivider()
                     // Armed only while focus stays on it: moving away and back has to ask again.
                     MenuEntry(
-                        if (confirming) stringResource(R.string.menu_unlink_confirm) else stringResource(R.string.account_unlink, user.displayName),
+                        if (confirming) stringResource(R.string.menu_unlink_confirm) else stringResource(R.string.account_unlink),
                         CoreR.drawable.ic_unlink,
                         Modifier.onFocusChanged { if (!it.hasFocus) confirming = false },
                         locked = locked,
@@ -218,7 +204,7 @@ internal fun Shell(
                         onExit()
                     }
                     Text(
-                        stringResource(R.string.menu_version, BuildConfig.VERSION_NAME, shownName),
+                        stringResource(R.string.menu_version, BuildConfig.VERSION_NAME, user.displayName),
                         color = TvColors.Muted,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 4.dp)

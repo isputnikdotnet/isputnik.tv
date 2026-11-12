@@ -151,11 +151,46 @@ class ApiClient(private val store: TextStore, userAgent: String) {
         persist()
     }
 
-    /** A clean slate for linking someone else; everyone already here stays. */
-    fun startLinking() = synchronized(lock) {
+    /** A clean slate for linking someone else; everyone already here stays. The app no longer
+     *  links a second person (one account per TV, 2026-11-11); kept for the tests, which use it
+     *  to build the TV an older version left behind. */
+    internal fun startLinking() = synchronized(lock) {
         activeId = null
         cookies = emptyList()
         persist()
+    }
+
+    /** One account per TV (owner, 2026-11-11): everyone else an older version linked here is
+     *  signed out on the server, each with their own cookies, so they leave the person's
+     *  Profile › Devices too, then forgotten. Signing out is best effort (a server that can't
+     *  be reached, or a session already gone); forgetting happens either way. */
+    suspend fun keepOnlyActive() = withContext(Dispatchers.IO) {
+        val others = synchronized(lock) { if (activeId == null) emptyList() else saved.filter { it.id != activeId } }
+        if (others.isEmpty()) return@withContext
+        for (person in others) runCatching { signOut(person.cookies.map(::toCookie)) }
+        synchronized(lock) {
+            saved = saved.filter { it.id == activeId }
+            persist()
+        }
+    }
+
+    private fun signOut(theirs: List<Cookie>) {
+        val url = absolute("/api/auth/logout")
+        val parsed = Request.Builder().url(url).build().url
+        val now = System.currentTimeMillis()
+        val live = theirs.filter { it.expiresAt > now && it.matches(parsed) }
+        if (live.none { it.name.endsWith("isputnik_session") }) return
+        // Their cookies only, and nothing they answer is kept: the TV's own session is untouched.
+        val client = http.newBuilder().cookieJar(object : CookieJar {
+            override fun loadForRequest(url: HttpUrl): List<Cookie> = live
+            override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) = Unit
+        }).build()
+        val request = Request.Builder().url(url)
+            .header("X-CSRF-Token", live.firstOrNull { it.name.endsWith("isputnik_csrf") }?.value ?: "")
+            .header("Origin", server ?: "")
+            .post("{}".toRequestBody(JSON_TYPE))
+            .build()
+        client.newCall(request).execute().close()
     }
 
     /** Forget the person in use, keeping everyone else and the address. */

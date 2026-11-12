@@ -3,7 +3,6 @@ package net.isputnik.tv
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -48,7 +47,6 @@ import net.isputnik.tv.core.TvButton
 import net.isputnik.tv.core.TvColors
 import net.isputnik.tv.core.TvTheme
 import net.isputnik.tv.core.User
-import net.isputnik.tv.core.checkPin
 import net.isputnik.tv.core.currentUser
 import net.isputnik.tv.core.profiles
 import net.isputnik.tv.core.wearProfile
@@ -63,11 +61,11 @@ private sealed interface Stage {
     data object Checking : Stage
     data object Unreachable : Stage
     data object Connect : Stage
-    data object Who : Stage
-    data class Link(val backTo: String?) : Stage
+    /** No one linked: a code to approve on a phone. One account per TV (owner, 2026-11-11). */
+    data object Link : Stage
     /** Signed in; [profiles] is null on a home without viewing profiles. */
     data class Signed(val user: User, val profiles: Profiles? = null) : Stage
-    /** Which of this account's viewing profiles is watching (home's Profile › TV profiles). */
+    /** Who's watching: Everyone, or one of the household's profiles. */
     data class ChooseProfile(val user: User, val profiles: Profiles) : Stage
     /** The PIN pad over a locked profile; [submit] throws for a wrong PIN, [back] is Stay here. */
     data class Pin(val purpose: PinPurpose, val submit: suspend (String) -> Unit, val back: Stage) : Stage
@@ -88,11 +86,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun Root(api: ApiClient, onExit: () -> Unit) {
-    // With several people on this TV it asks who's watching when opened; with one it just opens.
-    // It asks only once it knows the TV wasn't left in a locked profile (phase P2): from Kids,
-    // the picker would be a way to everyone else linked here.
     var stage by remember { mutableStateOf<Stage>(Stage.Checking) }
-    var askPerson by remember { mutableStateOf(api.people.size > 1) }
     var attempt by remember { mutableIntStateOf(0) }
     // Which profile is watching is asked once when the app opens, and again after choosing
     // another person; never when the TV was left in a restricted profile (Kids stays Kids).
@@ -104,13 +98,20 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
     // Each time the app comes to the screen, not only when it starts (Updates.checkIfStale).
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { scope.launch { updates.checkIfStale() } }
 
-    /** With this person gone: whoever's left, or a new code. */
+    /** With the account gone: a new code. (A TV an older version left with several people goes
+     *  to the next of them; keepOnlyActive then leaves it with that one.) */
     fun afterLeaving() {
-        stage = if (api.people.isNotEmpty()) Stage.Who else Stage.Link(null)
+        val next = api.people.firstOrNull()
+        if (next != null) {
+            api.switchTo(next.id)
+            stage = Stage.Checking
+            attempt++
+        } else {
+            stage = Stage.Link
+        }
     }
 
     LaunchedEffect(attempt) {
-        if (stage == Stage.Who) return@LaunchedEffect
         if (api.server == null) {
             stage = Stage.Connect
             return@LaunchedEffect
@@ -120,14 +121,11 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
             val user = api.currentUser()
             if (user != null) {
                 api.remember(user)
+                // One account per TV: anyone else an older version linked is signed out and
+                // forgotten, in the background so it never holds up opening.
+                if (api.people.size > 1) scope.launch { api.keepOnlyActive() }
                 // An older home has no profiles, and a failure here only means none are offered.
                 val profiles = runCatching { api.profiles() }.getOrNull()
-                if (askPerson && api.people.size > 1 && profiles?.locked != true) {
-                    askPerson = false
-                    stage = Stage.Who
-                    return@LaunchedEffect
-                }
-                askPerson = false
                 val ask = askProfile && profiles != null && profiles.profiles.isNotEmpty() && profiles.worn?.restricted != true
                 askProfile = false
                 stage = if (ask) Stage.ChooseProfile(user, profiles!!) else Stage.Signed(user, profiles)
@@ -174,7 +172,7 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
         is Stage.Signed -> current.user.theme
         is Stage.ChooseProfile -> current.user.theme
         is Stage.Pin -> (current.back as? Stage.Signed)?.user?.theme ?: api.activeTheme
-        Stage.Who, Stage.Connect -> null
+        Stage.Connect -> null
         else -> api.activeTheme
     }
     TvTheme(theme) {
@@ -195,36 +193,14 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
                     }
                 }
                 Stage.Connect -> ConnectScreen(api) { check() }
-                Stage.Who -> WhoScreen(
-                    people = api.people,
-                    onChoose = {
-                        api.switchTo(it)
-                        askProfile = true
-                        check()
-                    },
-                    onAdd = {
-                        val back = api.activePerson
-                        api.startLinking()
-                        stage = Stage.Link(back)
-                    }
+                Stage.Link -> LinkScreen(
+                    api,
+                    onChangeServer = { stage = Stage.Connect },
+                    onCancel = null,
+                    onLinked = { check() }
                 )
-                is Stage.Link -> {
-                    val leave = current.backTo?.let { back ->
-                        {
-                            api.switchTo(back)
-                            check()
-                        }
-                    } ?: if (api.people.isNotEmpty()) ({ stage = Stage.Who }) else null
-                    BackHandler(enabled = leave != null) { leave?.invoke() }
-                    LinkScreen(
-                        api,
-                        onChangeServer = if (api.people.isEmpty()) ({ stage = Stage.Connect }) else null,
-                        onCancel = leave,
-                        onLinked = { check() }
-                    )
-                }
                 is Stage.ChooseProfile -> InLanguage(current.user.language) {
-                    ProfileScreen(current.user, current.profiles) { id ->
+                    ProfileScreen(current.profiles) { id ->
                         scope.launch {
                             // Home keeps the choice on this TV's session; if it can't, carry on as before.
                             val worn = runCatching { api.wearProfile(id) }.getOrNull() ?: current.profiles
@@ -273,27 +249,10 @@ private fun Root(api: ApiClient, onExit: () -> Unit) {
                         Shell(
                             features,
                             current.user,
-                            people = api.people,
                             profiles = current.profiles,
                             searchRoute = video.searchRoute,
                             onWear = { id ->
                                 guarded(PinPurpose.Profile) { pin -> stage = Stage.Signed(current.user, api.wearProfile(id, pin)) }
-                            },
-                            onSwitch = { person ->
-                                guarded(PinPurpose.Person) { pin ->
-                                    // Home can't see the other people on this TV; the check is the pad.
-                                    if (pin != null) api.checkPin(pin)
-                                    api.switchTo(person)
-                                    askProfile = true
-                                    check()
-                                }
-                            },
-                            onAdd = {
-                                guarded(PinPurpose.Add) { pin ->
-                                    if (pin != null) api.checkPin(pin)
-                                    api.startLinking()
-                                    stage = Stage.Link(current.user.id)
-                                }
                             },
                             onUnlink = {
                                 guarded(PinPurpose.Unlink) { pin ->

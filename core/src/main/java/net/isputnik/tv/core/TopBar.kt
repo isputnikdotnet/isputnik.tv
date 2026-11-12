@@ -188,7 +188,7 @@ fun MenuDivider() {
     Box(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp).height(1.dp).background(TvColors.Muted.copy(alpha = 0.2f)))
 }
 
-/** What the profile button shows: the worn profile's letter on its colour, else the person icon. */
+/** What the profile button shows: the worn profile's letter on its colour, else the Everyone icon. */
 data class Avatar(val letter: String, val color: Color)
 
 /**
@@ -258,7 +258,7 @@ fun TopBar(
             if (avatar != null) {
                 Text(avatar.letter, color = if (tint == TvColors.Text) Color.White else tint, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             } else {
-                Icon(painterResource(R.drawable.ic_person), contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_people), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
             }
         }
         Spacer(Modifier.width(10.dp))

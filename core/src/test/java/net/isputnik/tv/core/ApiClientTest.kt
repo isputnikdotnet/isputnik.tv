@@ -109,6 +109,45 @@ class ApiClientTest {
         assertTrue(!store.text!!.contains("isputnik_session\",\"value\":\"second"))
     }
 
+    @Test fun `one account per TV - the others an older version linked are signed out and forgotten`() = runBlocking {
+        val api = client()
+        server.enqueue(MockResponse().addHeader("Set-Cookie", "isputnik_session=ann; Path=/").addHeader("Set-Cookie", "isputnik_csrf=anntoken; Path=/").setBody("""{"user":{"id":"a","displayName":"Ann"}}"""))
+        api.remember(api.currentUser()!!)
+        api.startLinking()
+        server.enqueue(MockResponse().addHeader("Set-Cookie", "isputnik_session=bo; Path=/").setBody("""{"user":{"id":"b","displayName":"Bo"}}"""))
+        api.remember(api.currentUser()!!)
+        server.takeRequest()
+        server.takeRequest()
+
+        server.enqueue(MockResponse().setBody("""{"ok":true}"""))
+        api.keepOnlyActive()
+        val logout = server.takeRequest()
+        assertEquals("/api/auth/logout", logout.path)
+        // Ann's session and token, never Bo's: the one staying on this TV is untouched.
+        assertTrue(logout.getHeader("Cookie")!!.contains("isputnik_session=ann"))
+        assertTrue(!logout.getHeader("Cookie")!!.contains("isputnik_session=bo"))
+        assertEquals("anntoken", logout.getHeader("X-CSRF-Token"))
+
+        assertEquals(listOf("Bo"), api.people.map { it.name })
+        assertEquals(listOf("Bo"), ApiClient(store, "iSputnikTV/test").people.map { it.name })
+        server.enqueue(MockResponse().setBody("""{"user":{"id":"b"}}"""))
+        api.currentUser()
+        assertTrue(server.takeRequest().getHeader("Cookie")!!.contains("isputnik_session=bo"))
+    }
+
+    @Test fun `forgetting the others still happens when the server can't sign them out`() = runBlocking {
+        val api = client()
+        server.enqueue(MockResponse().addHeader("Set-Cookie", "isputnik_session=ann; Path=/").setBody("""{"user":{"id":"a","displayName":"Ann"}}"""))
+        api.remember(api.currentUser()!!)
+        api.startLinking()
+        server.enqueue(MockResponse().addHeader("Set-Cookie", "isputnik_session=bo; Path=/").setBody("""{"user":{"id":"b","displayName":"Bo"}}"""))
+        api.remember(api.currentUser()!!)
+
+        server.enqueue(MockResponse().setResponseCode(500))
+        api.keepOnlyActive()
+        assertEquals(listOf("Bo"), api.people.map { it.name })
+    }
+
     @Test fun `a TV linked before people existed still has its session, until it's remembered`() = runBlocking {
         store.text = """{"server":"${server.url("/").toString().trimEnd('/')}","cookies":[{"name":"isputnik_session","value":"old","expiresAt":4102444800000,"domain":"${server.hostName}","path":"/","secure":false,"httpOnly":true,"hostOnly":true}]}"""
         val api = ApiClient(store, "iSputnikTV/test")
