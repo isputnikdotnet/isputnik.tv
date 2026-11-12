@@ -6,7 +6,7 @@ reasons are in `isputnik.home/docs/tv-store-plan.md` (A = Amazon, G = Google).
 - **Upload**: the `store-v<version>` artifact of the tag's Release run — `app-store-release.apk`
   for Amazon, `app-store-release.aab` for Google. Both are signed with the real key.
 - **Privacy policy URL**: <https://github.com/isputnikdotnet/isputnik.tv/blob/main/PRIVACY.md>
-- **Images** (`images/`): 512×512 icon, 114×114 small icon (Amazon), 1280×720 TV banner,
+- **Images** (`images/`): 512×512 icon, 114×114 small icon (Amazon), 1280×720 TV banner (Amazon: Fire TV app icon), Fire TV background 1920×1080 and featured logo 640×260 / background 1920×720 (Amazon),
   1024×500 feature graphic (Google). Made from `Assets/*.svg`.
 - **Screenshots** (`screenshots/`): six at 1920×1080, RGB, taken 2026-11-11 from the Fire TV
   running the 0.13.1 store APK, signed in to the demo as the Amazon reviewer (never the
