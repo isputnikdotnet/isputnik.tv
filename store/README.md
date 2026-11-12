@@ -11,7 +11,7 @@ reasons are in `isputnik.home/docs/tv-store-plan.md` (A = Amazon, G = Google).
 - **Screenshots** (`screenshots/`): six at 1920×1080, RGB, taken 2026-11-11 from the Fire TV
   running the 0.13.1 store APK, signed in to the demo as the Amazon reviewer (never the
   family's server): Movies, a show's episodes, the player with Skip intro, a film, Photos, a
-  photo full screen; and a seventh from 0.14.0, Who's watching? with Everyone and Kids.
+  photo full screen; and a seventh from 0.14.0, Who's watching? in Kids, with Everyone Locked.
   Retake with `adb exec-out screencap -p > shot.png`; a slideshow needs a few tries to miss
   the crossfade.
 
