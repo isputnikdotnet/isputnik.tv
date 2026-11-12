@@ -125,7 +125,8 @@ private fun Divider() {
 }
 
 /** One line of the settings menu. A [locked] one needs the household PIN first (a restricted
- *  profile); it says so, and the PIN pad opens when it is chosen. */
+ *  profile); it says so, and the PIN pad opens when it is chosen. A [danger] one (Unlink) is
+ *  red, and turns red rather than teal when focused. */
 @Composable
 fun MenuEntry(
     label: String,
@@ -133,13 +134,20 @@ fun MenuEntry(
     modifier: Modifier = Modifier,
     locked: Boolean = false,
     lockedLabel: String = "PIN",
+    danger: Boolean = false,
     onClick: () -> Unit
 ) {
     var focused by remember { mutableStateOf(false) }
     // Acts only on a press that started here: the menu opens on the gear's press, and that same
     // press's release must not choose whatever the menu focused first (it chose Exit app once).
     var pressed by remember { mutableStateOf(false) }
-    val tint = if (focused) TvColors.OnAccent else if (locked) TvColors.Muted else TvColors.Text
+    val tint = when {
+        focused -> if (danger) Color.White else TvColors.OnAccent
+        locked -> TvColors.Muted
+        danger -> TvColors.Danger
+        else -> TvColors.Text
+    }
+    val fill = if (!focused) Color.Transparent else if (danger) TvColors.Danger else TvColors.Accent
     Row(
         modifier
             .fillMaxWidth()
@@ -159,7 +167,7 @@ fun MenuEntry(
                 true
             }
             .clip(RoundedCornerShape(8.dp))
-            .background(if (focused) TvColors.Accent else Color.Transparent)
+            .background(fill)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -246,6 +254,15 @@ fun TopBar(
             }
             Spacer(Modifier.width(10.dp))
         }
+        RoundButton(profileLabel, background = avatar?.color ?: TvColors.SurfaceRaised, onClick = onProfile) { tint ->
+            if (avatar != null) {
+                Text(avatar.letter, color = if (tint == TvColors.Text) Color.White else tint, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            } else {
+                Icon(painterResource(R.drawable.ic_person), contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        // Settings last, at the corner (owner, 2026-11-11): its menu drops from the screen's edge.
         Box {
             RoundButton(settingsLabel, Modifier.focusRequester(gear), onClick = { menuOpen = true }) { tint ->
                 Icon(painterResource(R.drawable.ic_settings), contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
@@ -261,7 +278,7 @@ fun TopBar(
                     onDismissRequest = close,
                     properties = PopupProperties(focusable = true)
                 ) {
-                    // Focus starts on the first line (Refresh), whatever the popup would pick.
+                    // Focus starts on the first line, whatever the popup would pick.
                     val first = remember { FocusRequester() }
                     LaunchedEffect(Unit) {
                         withFrameNanos { }
@@ -278,14 +295,6 @@ fun TopBar(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) { menu(close) }
                 }
-            }
-        }
-        Spacer(Modifier.width(10.dp))
-        RoundButton(profileLabel, background = avatar?.color ?: TvColors.SurfaceRaised, onClick = onProfile) { tint ->
-            if (avatar != null) {
-                Text(avatar.letter, color = if (tint == TvColors.Text) Color.White else tint, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            } else {
-                Icon(painterResource(R.drawable.ic_person), contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
             }
         }
     }

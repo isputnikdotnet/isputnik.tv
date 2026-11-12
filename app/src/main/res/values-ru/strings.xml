@@ -9,8 +9,8 @@
     <string name="connect_unreachable">Не удалось подключиться. Проверьте адрес и попробуйте ещё раз.</string>
     <string name="connect_invalid">Это не похоже на адрес.</string>
     <string name="link_title">Привязка телевизора</string>
-    <string name="link_steps">Отсканируйте код телефоном, на котором выполнен вход в iSputnik, или откройте на нём этот адрес:</string>
-    <string name="link_confirm">Убедитесь, что на телефоне показан этот код, и подтвердите паролем.</string>
+    <string name="link_steps">Отсканируйте код телефоном или откройте на нём этот адрес:</string>
+    <string name="link_confirm">Убедитесь, что на телефоне показан этот код, и войдите там в свою учётную запись iSputnik.</string>
     <string name="link_plain_http">Этот адрес не шифруется. Используйте его только в своей домашней сети.</string>
     <string name="link_change_server">Изменить адрес</string>
     <string name="link_refused_network">Устройства можно привязать только из домашней сети. Администратор может открыть для вас окно регистрации.</string>

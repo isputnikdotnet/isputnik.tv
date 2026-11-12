@@ -163,6 +163,8 @@ object TvColors {
     val Text: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.text
     val Muted: Color @Composable @ReadOnlyComposable get() = LocalTvPalette.current.muted
     val Track = Color(0x55FFFFFF)
+    /** Actions that undo something (Unlink). One red for every theme: they are all dark. */
+    val Danger = Color(0xFFE5534B)
 }
 
 /** `theme` is the name on the account in use; null is the default. */

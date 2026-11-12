@@ -182,26 +182,30 @@ internal fun Shell(
                 settingsLabel = stringResource(R.string.action_settings),
                 menu = { close ->
                     var confirming by remember { mutableStateOf(false) }
-                    MenuEntry(stringResource(R.string.menu_refresh), CoreR.drawable.ic_refresh) {
+                    // Owner's order (2026-11-11): Add a person, Test connection speed, then the
+                    // rest; Unlink apart and in red, so it is never chosen by drifting down.
+                    MenuEntry(stringResource(R.string.who_add), CoreR.drawable.ic_person_add, locked = locked, lockedLabel = stringResource(R.string.menu_pin)) {
                         close()
-                        refreshes++
-                        onRefresh()
+                        onAdd()
                     }
                     MenuEntry(stringResource(R.string.menu_speed_test), CoreR.drawable.ic_speed) {
                         close()
                         nav.push(SpeedTestRoute)
                     }
-                    MenuEntry(stringResource(R.string.who_add), CoreR.drawable.ic_person_add, locked = locked, lockedLabel = stringResource(R.string.menu_pin)) {
+                    MenuEntry(stringResource(R.string.menu_refresh), CoreR.drawable.ic_refresh) {
                         close()
-                        onAdd()
+                        refreshes++
+                        onRefresh()
                     }
+                    MenuDivider()
                     // Armed only while focus stays on it: moving away and back has to ask again.
                     MenuEntry(
                         if (confirming) stringResource(R.string.menu_unlink_confirm) else stringResource(R.string.account_unlink, user.displayName),
                         CoreR.drawable.ic_unlink,
                         Modifier.onFocusChanged { if (!it.hasFocus) confirming = false },
                         locked = locked,
-                        lockedLabel = stringResource(R.string.menu_pin)
+                        lockedLabel = stringResource(R.string.menu_pin),
+                        danger = true
                     ) {
                         if (confirming || locked) {
                             close()

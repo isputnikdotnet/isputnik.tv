@@ -9,8 +9,8 @@
     <string name="connect_unreachable">Unable to reach that address. Check it and try again.</string>
     <string name="connect_invalid">That doesn\'t look like an address.</string>
     <string name="link_title">Link this TV</string>
-    <string name="link_steps">Scan the code with a phone signed in to iSputnik, or open this address on it:</string>
-    <string name="link_confirm">Check that the phone shows this code, then confirm with your password.</string>
+    <string name="link_steps">Scan the code with your phone, or open this address on it:</string>
+    <string name="link_confirm">Check that the phone shows this code, then sign in there with your iSputnik account.</string>
     <string name="link_plain_http">This address isn\'t encrypted. Use it only on your own home network.</string>
     <string name="link_change_server">Change address</string>
     <string name="link_refused_network">Devices can only be linked from your home network. An administrator can open a registration window for you.</string>
