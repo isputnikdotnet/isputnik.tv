@@ -100,7 +100,7 @@ word. The reviewer account and its password are per store and kept off the repo.
 
 > This app needs an iSputnik home server. We run a demo one for review.
 >
-> 1. Open the app and choose Connect. Type: demo.isputnik.com
+> 1. Open the app and choose Connect. Type: demo.isputnik.net
 > 2. The TV shows a QR code and an address with a code. Scan the QR with any phone, or open
 >    the address on a phone or computer. Sign in there with the account below and choose
 >    Sign in and link. The TV signs in by itself.
