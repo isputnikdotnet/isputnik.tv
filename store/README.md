@@ -98,18 +98,28 @@ iSputnik TV — приложение для телевизора к iSputnik, л
 Written from the D4 check (`tv-store-plan.md`): what was actually done on the demo, word for
 word. The reviewer account and its password are per store and kept off the repo.
 
+> **SERVER ADDRESS: demo.isputnik.net**
+> **It ends in .NET, not .com.** The .com address is private and will not connect.
+>
 > This app needs an iSputnik home server. We run a demo one for review.
 >
-> 1. Open the app and choose Connect. Type: demo.isputnik.net
-> 2. The TV shows a QR code and an address with a code. Scan the QR with any phone, or open
->    the address on a phone or computer. Sign in there with the account below and choose
->    Sign in and link. The TV signs in by itself.
+> 1. Open the app and choose **Connect**. Type exactly: **demo.isputnik.net**
+> 2. The TV shows a QR code and a short code. Scan the QR code with a phone (easiest), or
+>    open the address shown on the TV in a browser. Sign in with the account below and
+>    choose **Sign in and link**. The TV signs in by itself within a few seconds.
 > 3. Who's watching? offers Everyone and Kids. Choose Everyone for everything: films and shows
 >    in Movies and Shows, and three photo albums in Photos.
 > 4. Kids is a children's profile: choosing it is free, but leaving it (choosing Everyone
 >    again, or Unlink this TV in Settings) asks for the household PIN below.
 >
-> Account: (the store's reviewer member) · Password: (from accounts.txt) · PIN: (household PIN)
+> **Account:** (the store's reviewer member)
+> **Password:** (from accounts.txt)
+> **PIN:** (household PIN)
+
+Why the address leads: Amazon's first review (rejected 2026-11-13) failed sign-in because the
+reviewer typed isputnik.com, which is the family's private name and resolves only inside the
+house. It stays private (owner's decision); the notes must make .net unmissable instead. Attach
+a photo of the Connect screen with demo.isputnik.net typed in when the store allows one.
 
 The demo as snapshotted 2026-11-12 01:43 UTC: Kids restricted with the PIN set (all video
 libraries); Park, Food and Cats on the TV for grown-ups only, so Kids has no Photos. The demo
