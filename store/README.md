@@ -32,9 +32,13 @@ Watch your household's own iSputnik films, shows and photos on the big screen.
 
 **Full description**:
 
+A private client for your own home server. It shows only your household's own media; there is
+no public or shared content.
+
 iSputnik TV is the television app for iSputnik, a private media library that a household runs
 on its own server at home. It needs an iSputnik server to connect to — the app holds no media
-of its own and offers no content.
+of its own and offers no content. Only people the server's owner has added can sign in, and
+the app has no posting, commenting or messaging.
 
 Connect to your server, then approve the TV from your phone with Link a device: the TV shows a
 code, you type it with your password. No password is ever typed on the TV.
@@ -60,9 +64,13 @@ For Android TV, Google TV and Fire TV.
 
 **Полное описание**:
 
+Личный клиент для вашего домашнего сервера. Показывает только медиа вашей семьи; общедоступного
+или общего контента здесь нет.
+
 iSputnik TV — приложение для телевизора к iSputnik, личной медиатеке, которую семья держит на
 своём сервере дома. Для работы нужен сервер iSputnik: в самом приложении нет ни медиа, ни
-контента.
+контента. Войти могут только те, кого добавил владелец сервера; публикаций, комментариев и
+переписки в приложении нет.
 
 Подключитесь к своему серверу и подтвердите телевизор с телефона через «Привязать устройство»:
 телевизор показывает код, вы вводите его со своим паролем. Пароль на телевизоре не вводится.
@@ -85,7 +93,9 @@ iSputnik TV — приложение для телевизора к iSputnik, л
 - **Category**: Entertainment (Amazon) / Video Players & Editors (Google).
 - **Content rating**: no user-generated content shared between users of different
   households, no ads, no purchases. The content is the household's own; answer as a media
-  player.
+  player. Amazon's first review (2026-11-13) still flagged it under the User-Generated
+  Content Policy; the description's first lines now say it plainly, and an appeal went to
+  Contact Us › Appstore › "Content Policy and Test Results".
 - **Data safety (Google)**: no data collected, no data shared. Data is encrypted in transit
   when the server uses HTTPS (the app warns when it does not).
 - **Target audience (Google)**: 18+ / not designed for children. The Kids profile is a
